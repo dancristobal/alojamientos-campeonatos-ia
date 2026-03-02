@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useConfig } from '../hooks/useConfig';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -20,12 +21,17 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+    const { config } = useConfig();
     const navItems = [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/' },
         { title: 'Campeonatos', icon: Trophy, href: '/campeonatos' },
         { title: 'Calendario', icon: Calendar, href: '/calendario' },
         { title: 'Configuración', icon: Settings, href: '/settings' },
     ];
+
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
 
     return (
         <>
@@ -84,11 +90,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <div className="p-6 border-t dark:border-slate-800">
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
-                                DC
+                                {getInitials(config.usuario.nombre)}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate">Daniel Cristobal</p>
-                                <p className="text-[10px] text-slate-500 truncate">Admin</p>
+                                <p className="text-xs font-semibold truncate">{config.usuario.nombre}</p>
+                                <p className="text-[10px] text-slate-500 truncate">{config.usuario.rol}</p>
                             </div>
                         </div>
                     </div>

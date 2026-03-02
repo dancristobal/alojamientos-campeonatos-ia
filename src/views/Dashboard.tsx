@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { format, isAfter, isBefore, addDays, parseISO, differenceInDays } from 'date-fns';
+import { useConfig } from '../hooks/useConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Badge from '../components/Badge';
@@ -26,6 +27,7 @@ function cn(...inputs: ClassValue[]) {
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
+    const { config, isLoading: loadingCfg } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     // For the dashboard, we might want a global hook or fetch all reservations
     // For simplicity in this step, let's fetch all active reservations directly
@@ -34,6 +36,7 @@ const Dashboard: React.FC = () => {
 
     React.useEffect(() => {
         const fetchAll = async () => {
+            setAllReservas([]);
             setLoadingRes(true);
             const { data } = await supabase.from('reservas').select('*, campeonato:campeonatos(*)');
             setAllReservas(data || []);
@@ -46,8 +49,8 @@ const Dashboard: React.FC = () => {
 
     const metrics = useMemo(() => {
         const now = new Date();
-        const next7Days = addDays(now, 7);
-        const next3Days = addDays(now, 3);
+        const next7Days = addDays(now, config.umbrales.proxima);
+        const next3Days = addDays(now, config.umbrales.critica);
 
         return {
             totalActivas: allReservas.filter(r => r.estado === 'activa').length,
@@ -68,12 +71,12 @@ const Dashboard: React.FC = () => {
             proximasEntradas: allReservas.filter(r =>
                 r.estado === 'activa' &&
                 isAfter(parseISO(r.fecha_entrada), now) &&
-                isBefore(parseISO(r.fecha_entrada), next7Days)
+                isBefore(parseISO(r.fecha_entrada), addDays(now, 7))
             ).sort((a, b) => parseISO(a.fecha_entrada).getTime() - parseISO(b.fecha_entrada).getTime()),
         };
-    }, [allReservas]);
+    }, [allReservas, config]);
 
-    if (loadingCam || loadingRes) {
+    if (loadingCam || loadingRes || loadingCfg) {
         return (
             <div className="flex flex-col items-center justify-center py-32 gap-6 glass rounded-[3rem]">
                 <div className="relative">

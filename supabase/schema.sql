@@ -45,6 +45,17 @@ CREATE TABLE IF NOT EXISTS habitaciones_reserva (
 CREATE INDEX IF NOT EXISTS idx_reservas_campeonato ON reservas(campeonato_id);
 CREATE INDEX IF NOT EXISTS idx_habitaciones_reserva ON habitaciones_reserva(reserva_id);
 
+CREATE TABLE IF NOT EXISTS configuracion (
+    id TEXT PRIMARY KEY,
+    valor JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Initial configuration
+INSERT INTO configuracion (id, valor) 
+VALUES ('general', '{"umbrales": {"proxima": 7, "critica": 3}, "usuario": {"nombre": "Daniel Cristobal", "rol": "Admin"}}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
+
 -- Logical Trigger for Automatic Calculations (Optional, can be done in Frontend, but better in DB for consistency)
 -- For the MVP, we will rely on frontend calculations but keep the fields ready.
 
