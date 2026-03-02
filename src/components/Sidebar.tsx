@@ -65,10 +65,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                 to={item.href}
                                 onClick={() => window.innerWidth < 1024 && onClose()}
                                 className={({ isActive }) => cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group font-semibold",
                                     isActive
-                                        ? "bg-primary text-white shadow-lg shadow-primary/30"
-                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                        ? "bg-primary text-primary-foreground shadow-xl shadow-primary/25 translate-x-1"
+                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary"
                                 )}
                             >
                                 <item.icon className={cn(

@@ -28,11 +28,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ...props
     }, ref) => {
         const variants = {
-            primary: "bg-primary text-white shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95",
-            secondary: "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700",
-            outline: "border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800",
-            ghost: "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
-            danger: "bg-rose-500 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 hover:bg-rose-600"
+            primary: "bg-primary text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary/40 hover:-translate-y-0.5 active:scale-95 active:translate-y-0",
+            secondary: "bg-slate-200/50 text-slate-900 dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 backdrop-blur-sm shadow-sm",
+            outline: "border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500",
+            ghost: "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
+            danger: "bg-rose-500 text-white shadow-lg shadow-rose-500/30 hover:bg-rose-600 hover:-translate-y-0.5 active:scale-95"
         };
 
         const sizes = {

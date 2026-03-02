@@ -18,11 +18,11 @@ const Badge: React.FC<BadgeProps> = ({
     className
 }) => {
     const variants = {
-        default: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
-        success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-        warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-        error: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
-        outline: "border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400",
+        default: "bg-slate-200/80 text-slate-900 dark:bg-slate-800 dark:text-slate-200",
+        success: "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20",
+        warning: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/20",
+        error: "bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-200 dark:border-rose-500/20",
+        outline: "border-2 border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-300",
     };
 
     return (
