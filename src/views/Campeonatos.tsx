@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useConfig } from '../hooks/useConfig';
 import { useCampeonatos } from '../hooks/useCampeonatos';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -18,15 +20,56 @@ import {
     AlertCircle,
     Edit3
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Campeonatos: React.FC = () => {
     const navigate = useNavigate();
+    const { config, isLoading: loadingCfg } = useConfig();
     const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato, updateCampeonato } = useCampeonatos();
+    const [reservas, setReservas] = useState<any[]>([]);
+    const [loadingRes, setLoadingRes] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchReservas = async () => {
+            try {
+                setLoadingRes(true);
+                const { data } = await supabase
+                    .from('reservas')
+                    .select('id, campeonato_id, fecha_cancelacion, es_reembolsable, estado')
+                    .eq('estado', 'activa');
+                setReservas(data || []);
+            } catch (err) {
+                console.error('Error fetching reservations:', err);
+            } finally {
+                setLoadingRes(false);
+            }
+        };
+        fetchReservas();
+    }, []);
+
+    const campeonatosConAlertas = useMemo(() => {
+        const now = new Date();
+        const nextCritico = addDays(now, config.umbrales.critica);
+
+        const alertasMap: Record<string, boolean> = {};
+
+        reservas.forEach(r => {
+            if (
+                r.es_reembolsable &&
+                r.fecha_cancelacion &&
+                isAfter(parseISO(r.fecha_cancelacion), now) &&
+                isBefore(parseISO(r.fecha_cancelacion), nextCritico)
+            ) {
+                alertasMap[r.campeonato_id] = true;
+            }
+        });
+
+        return alertasMap;
+    }, [reservas, config]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -109,10 +152,10 @@ const Campeonatos: React.FC = () => {
             </div>
 
             {/* Content */}
-            {isLoading ? (
+            {(isLoading || loadingRes || loadingCfg) ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4 glass rounded-3xl">
                     <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground font-semibold animate-pulse">Conectando con Supabase...</p>
+                    <p className="text-muted-foreground font-semibold animate-pulse">Cargando campeonatos y alertas...</p>
                 </div>
             ) : campeonatos.length === 0 ? (
                 <div className="glass p-16 text-center rounded-[2.5rem] border-dashed border-2 flex flex-col items-center">
@@ -145,9 +188,17 @@ const Campeonatos: React.FC = () => {
                                 <div className="flex-1 min-w-0 space-y-2">
                                     <div className="flex items-center gap-4 flex-wrap">
                                         <h3 className="text-2xl font-bold tracking-tight">{c.nombre}</h3>
-                                        <Badge variant={c.estado === 'abierto' ? 'success' : 'outline'} className="text-sm px-4">
-                                            {c.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
-                                        </Badge>
+                                        <div className="flex gap-2">
+                                            <Badge variant={c.estado === 'abierto' ? 'success' : 'outline'} className="text-sm px-4">
+                                                {c.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
+                                            </Badge>
+                                            {campeonatosConAlertas[c.id] && (
+                                                <Badge variant="error" className="text-sm px-4 animate-pulse flex items-center gap-1.5 shadow-lg shadow-rose-500/20">
+                                                    <AlertCircle className="w-4 h-4" />
+                                                    ¡Cancelación Crítica!
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="flex flex-wrap gap-x-8 gap-y-3 text-base text-slate-500 dark:text-slate-400">

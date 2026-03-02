@@ -39,6 +39,10 @@ export const useConfig = () => {
                 .eq('id', 'general')
                 .single();
 
+            if (error) {
+                console.error('Supabase error fetching config:', error);
+            }
+
             if (data?.valor) {
                 setConfig(data.valor as AppConfig);
             }
@@ -59,6 +63,7 @@ export const useConfig = () => {
                 setConfig(newConfig);
                 return true;
             }
+            console.error('Supabase error updating config:', error);
             return false;
         } catch (err) {
             console.error('Error updating config:', err);

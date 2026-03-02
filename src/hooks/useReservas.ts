@@ -50,22 +50,22 @@ export function useReservas(campeonatoId?: string) {
             const precioFinal = reservaData.precio_total_manual !== undefined && reservaData.precio_total_manual !== null
                 ? reservaData.precio_total_manual
                 : precioCalculado;
-
             // 1. Insert/Update Reserva
             const { data: resData, error: resError } = await supabase
                 .from('reservas')
-                .upsert([{
+                .upsert({
                     ...reservaData,
                     precio_total_calculado: precioCalculado,
                     precio_total_final: precioFinal,
                     updated_at: new Date().toISOString()
-                }])
+                })
                 .select()
                 .single();
 
             if (resError) throw resError;
 
-            // 2. Clear old habitaciones if updating (simplified for MVP: delete all and re-insert)
+            // 2. Clear old habitaciones if updating
+            // We use resData.id to be absolutely sure we have the correct ID
             const { error: delError } = await supabase
                 .from('habitaciones_reserva')
                 .delete()
@@ -74,16 +74,19 @@ export function useReservas(campeonatoId?: string) {
             if (delError) throw delError;
 
             // 3. Insert new habitaciones
-            const roomsToInsert = habitaciones.map(h => ({ ...h, reserva_id: resData.id }));
-            const { error: roomError } = await supabase
-                .from('habitaciones_reserva')
-                .insert(roomsToInsert);
+            if (habitaciones.length > 0) {
+                const roomsToInsert = habitaciones.map(h => ({ ...h, reserva_id: resData.id }));
+                const { error: roomError } = await supabase
+                    .from('habitaciones_reserva')
+                    .insert(roomsToInsert);
 
-            if (roomError) throw roomError;
+                if (roomError) throw roomError;
+            }
 
-            fetchReservas();
+            await fetchReservas();
             return resData;
         } catch (err: any) {
+            console.error('Error in saveReserva:', err);
             setError(err.message);
             throw err;
         }

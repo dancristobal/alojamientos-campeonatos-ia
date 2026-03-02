@@ -55,8 +55,13 @@ CREATE TABLE IF NOT EXISTS configuracion (
 
 -- Initial configuration
 INSERT INTO configuracion (id, valor) 
-VALUES ('general', '{"umbrales": {"proxima": 7, "critica": 3}, "usuario": {"nombre": "Daniel Cristobal", "rol": "Admin"}}'::jsonb)
+VALUES ('general', '{"umbrales": {"proxima": 7, "critica": 3}, "usuario": {"nombre": "Daniel Cristobal", "rol": "Admin"}, "email_notificaciones": "daniel@example.com"}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
+
+-- RLS Policies (Enable public access for MVP)
+ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Permitir lectura pública de configuración" ON configuracion FOR SELECT USING (true);
+CREATE POLICY "Permitir actualización pública de configuración" ON configuracion FOR ALL USING (true) WITH CHECK (true);
 
 -- Logical Trigger for Automatic Calculations (Optional, can be done in Frontend, but better in DB for consistency)
 -- For the MVP, we will rely on frontend calculations but keep the fields ready.
@@ -68,7 +73,11 @@ BEGIN
     IF (SELECT estado FROM campeonatos WHERE id = COALESCE(NEW.campeonato_id, OLD.campeonato_id)) = 'cerrado' THEN
         RAISE EXCEPTION 'No se puede modificar una reserva de un campeonato cerrado.';
     END IF;
-    RETURN NEW;
+    IF (TG_OP = 'DELETE') THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -87,7 +96,11 @@ BEGIN
     IF (SELECT estado FROM campeonatos WHERE id = target_campeonato_id) = 'cerrado' THEN
         RAISE EXCEPTION 'No se puede modificar habitaciones de un campeonato cerrado.';
     END IF;
-    RETURN NEW;
+    IF (TG_OP = 'DELETE') THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -105,17 +118,18 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- Schedule the check-cancellations function to run every day at 08:00 AM
 -- Note: Replace 'YOUR_PROJECT_REF' with your actual Supabase project reference
 -- and 'YOUR_SERVICE_ROLE_KEY' with your service role key in the Supabase Dashboard.
-/*
+
+
 SELECT cron.schedule(
   'check-daily-cancellations',
   '0 8 * * *',
   $$
   SELECT
     net.http_post(
-      url:='https://YOUR_PROJECT_REF.supabase.co/functions/v1/check-cancellations',
-      headers:='{"Content-Type": "application/json", "Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb,
+      url:='https://qjorborwblqpdtdfpmpm.supabase.co/functions/v1/check-cancellations',
+      headers:='{"Content-Type": "application/json", "Authorization": "Bearer sb_publishable_RcuYcQq-vTjci2snonLUaw_4N1xbLHM"}'::jsonb,
       body:='{}'::jsonb
     ) as request_id;
   $$
 );
-*/
+

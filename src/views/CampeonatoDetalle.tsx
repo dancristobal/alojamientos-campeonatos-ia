@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useCampeonatos } from '../hooks/useCampeonatos';
 import { useReservas } from '../hooks/useReservas';
+import { useConfig } from '../hooks/useConfig';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
@@ -18,9 +19,10 @@ import {
     AlertTriangle,
     Info,
     MapPin,
-    RefreshCw
+    RefreshCw,
+    AlertCircle
 } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -33,6 +35,7 @@ function cn(...inputs: ClassValue[]) {
 const CampeonatoDetalle: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
+    const { config } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, calculatePrice } = useReservas(id);
 
@@ -63,6 +66,19 @@ const CampeonatoDetalle: React.FC = () => {
         }, 0) || 0;
         return acc + (r.estado === 'activa' ? plazasReserva : 0);
     }, 0);
+
+    const hasCriticalCancellation = React.useMemo(() => {
+        const now = new Date();
+        const nextCritico = addDays(now, config.umbrales.critica);
+
+        return reservas.some(r =>
+            r.estado === 'activa' &&
+            r.es_reembolsable &&
+            r.fecha_cancelacion &&
+            isAfter(parseISO(r.fecha_cancelacion), now) &&
+            isBefore(parseISO(r.fecha_cancelacion), nextCritico)
+        );
+    }, [reservas, config]);
 
     const handleAddRoom = () => {
         setHabitaciones([...habitaciones, { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
@@ -179,6 +195,12 @@ const CampeonatoDetalle: React.FC = () => {
                         <Badge variant={campeonato.estado === 'abierto' ? 'success' : 'outline'}>
                             {campeonato.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                         </Badge>
+                        {hasCriticalCancellation && (
+                            <Badge variant="error" className="animate-pulse shadow-lg shadow-rose-500/20 flex items-center gap-1.5">
+                                <AlertCircle className="w-4 h-4" />
+                                Cancelación Crítica
+                            </Badge>
+                        )}
                     </div>
                     <p className="text-muted-foreground flex items-center gap-2 mt-1">
                         <MapPin className="w-4 h-4" /> {campeonato.localidad} • {format(new Date(campeonato.fecha), "PPP", { locale: es })}
@@ -294,15 +316,20 @@ const CampeonatoDetalle: React.FC = () => {
                                         {/* Meta info */}
                                         <div className="flex items-center gap-6 pt-4 border-t dark:border-slate-800">
                                             {r.es_reembolsable && r.fecha_cancelacion && (
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <Info className="w-4 h-4 text-amber-500" />
-                                                    <span className="font-medium">Cancelación:</span>
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded-lg",
-                                                        differenceInDays(parseISO(r.fecha_cancelacion), new Date()) <= 3 ? "bg-rose-100 text-rose-700" : "bg-slate-100 dark:bg-slate-800"
-                                                    )}>
-                                                        {format(new Date(r.fecha_cancelacion), "PPP", { locale: es })}
-                                                    </span>
+                                                <div className="flex items-center gap-3 text-sm flex-wrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <Info className="w-4 h-4 text-amber-500" />
+                                                        <span className="font-medium">Cancelación:</span>
+                                                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                                                            {format(new Date(r.fecha_cancelacion), "PPP", { locale: es })}
+                                                        </span>
+                                                    </div>
+                                                    {differenceInDays(parseISO(r.fecha_cancelacion), new Date()) <= config.umbrales.critica && (
+                                                        <Badge variant="error" className="animate-pulse shadow-lg shadow-rose-500/20 flex items-center gap-1.5">
+                                                            <AlertCircle className="w-4 h-4" />
+                                                            ¡Atención: Límite Crítico!
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             )}
                                             {r.enlace_web && (
