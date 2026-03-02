@@ -234,7 +234,7 @@ const CampeonatoDetalle: React.FC = () => {
 
                                         {/* Meta info */}
                                         <div className="flex items-center gap-6 pt-4 border-t dark:border-slate-800">
-                                            {r.fecha_cancelacion && (
+                                            {r.es_reembolsable && r.fecha_cancelacion && (
                                                 <div className="flex items-center gap-2 text-sm">
                                                     <Info className="w-4 h-4 text-amber-500" />
                                                     <span className="font-medium">Cancelación:</span>
@@ -309,12 +309,6 @@ const CampeonatoDetalle: React.FC = () => {
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Límite Cancelación (Opcional)"
-                                type="date"
-                                value={formData.fecha_cancelacion}
-                                onChange={e => setFormData({ ...formData, fecha_cancelacion: e.target.value })}
-                            />
                             <div className="flex items-center gap-3 pt-8 px-2">
                                 <input
                                     type="checkbox"
@@ -325,6 +319,14 @@ const CampeonatoDetalle: React.FC = () => {
                                 />
                                 <label htmlFor="reembolsable" className="text-sm font-semibold select-none">¿Es Reembolsable?</label>
                             </div>
+                            {formData.es_reembolsable && (
+                                <Input
+                                    label="Límite Cancelación (Opcional)"
+                                    type="date"
+                                    value={formData.fecha_cancelacion}
+                                    onChange={e => setFormData({ ...formData, fecha_cancelacion: e.target.value })}
+                                />
+                            )}
                         </div>
                         <Input
                             label="Enlace a la Reserva"
