@@ -162,7 +162,7 @@ const Calendario: React.FC = () => {
                                     {dayRes.map(r => (
                                         <Link
                                             key={r.id}
-                                            to={`/campeonatos/${r.campeonato_id}`}
+                                            to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`}
                                             className="px-2 py-1 bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-900/30 line-clamp-1 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
                                             title={`Ver reserva en ${r.alojamiento_nombre}`}
                                         >

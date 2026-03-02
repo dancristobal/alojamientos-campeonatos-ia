@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useCampeonatos } from '../hooks/useCampeonatos';
 import { useReservas } from '../hooks/useReservas';
 import Badge from '../components/Badge';
@@ -32,12 +32,13 @@ function cn(...inputs: ClassValue[]) {
 
 const CampeonatoDetalle: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const location = useLocation();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, calculatePrice } = useReservas(id);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [editingReservaId, setEditingReservaId] = useState<string | null>(null); // New state for editing
+    const [editingReservaId, setEditingReservaId] = useState<string | null>(null);
 
     const campeonato = campeonatos.find(c => c.id === id);
     // Form State for Reserva
@@ -142,6 +143,19 @@ const CampeonatoDetalle: React.FC = () => {
         // Reset habitaciones
         setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
     };
+
+    // Auto-open specific reservation if ID is in URL
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const reservaId = params.get('reservaId');
+
+        if (reservaId && reservas.length > 0 && !isModalOpen && !editingReservaId) {
+            const reservaToEdit = reservas.find(r => r.id === reservaId);
+            if (reservaToEdit) {
+                handleEditReserva(reservaToEdit);
+            }
+        }
+    }, [location.search, reservas, isModalOpen, editingReservaId]);
 
     if (loadingCam || !campeonato) {
         return (loadingCam ? <div className="p-20 text-center">Cargando detalles...</div> : <div>Cargando...</div>);
