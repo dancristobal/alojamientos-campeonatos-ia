@@ -199,7 +199,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Quick Access Info */}
-            <div className="glass p-8 rounded-[3rem] bg-slate-900 text-white flex flex-col md:flex-row items-center gap-6">
+            <div className="p-8 rounded-[3rem] bg-slate-900 text-white flex flex-col md:flex-row items-center gap-6 shadow-2xl border border-slate-800">
                 <div className="w-16 h-16 rounded-3xl bg-primary flex items-center justify-center shrink-0">
                     <Info className="w-8 h-8" />
                 </div>
@@ -207,7 +207,7 @@ const Dashboard: React.FC = () => {
                     <h3 className="text-xl font-bold">Consejo de Gestión</h3>
                     <p className="text-slate-400 mt-1">Recuerda que si cierras un campeonato, todas sus reservas quedarán bloqueadas para evitar modificaciones accidentales tras finalizar el evento.</p>
                 </div>
-                <Button variant="outline" className="border-slate-700 hover:bg-slate-800 text-white" onClick={() => navigate('/campeonatos')}>
+                <Button variant="primary" className="shadow-none border border-white/10" onClick={() => navigate('/campeonatos')}>
                     Gestionar Campeonatos
                 </Button>
             </div>
