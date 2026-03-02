@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS campeonatos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre TEXT NOT NULL,
     fecha DATE NOT NULL,
+    fecha_fin DATE, -- Nuevo campo
     localidad TEXT NOT NULL,
     numero_personas INTEGER NOT NULL DEFAULT 1,
     estado estado_campeonato NOT NULL DEFAULT 'abierto',
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS reservas (
     precio_total_calculado NUMERIC(10, 2) NOT NULL DEFAULT 0,
     precio_total_final NUMERIC(10, 2) NOT NULL DEFAULT 0,
     enlace_web TEXT,
+    observaciones TEXT, -- Nuevo campo
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

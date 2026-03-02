@@ -42,7 +42,7 @@ export function useReservas(campeonatoId?: string) {
     };
 
     const saveReserva = async (
-        reservaData: Omit<Reserva, 'id' | 'created_at' | 'updated_at' | 'habitaciones'>,
+        reservaData: Omit<Reserva, 'id' | 'created_at' | 'updated_at' | 'habitaciones' | 'precio_total_calculado' | 'precio_total_final'> & { id?: string },
         habitaciones: Omit<HabitacionReserva, 'id' | 'reserva_id'>[]
     ) => {
         try {

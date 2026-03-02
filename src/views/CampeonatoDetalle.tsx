@@ -17,7 +17,8 @@ import {
     Users,
     AlertTriangle,
     Info,
-    MapPin
+    MapPin,
+    RefreshCw
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -32,13 +33,13 @@ function cn(...inputs: ClassValue[]) {
 const CampeonatoDetalle: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
-    const { reservas, isLoading: loadingRes, saveReserva, calculatePrice } = useReservas(id);
+    const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, calculatePrice } = useReservas(id);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [editingReservaId, setEditingReservaId] = useState<string | null>(null); // New state for editing
 
     const campeonato = campeonatos.find(c => c.id === id);
-
     // Form State for Reserva
     const [formData, setFormData] = useState({
         alojamiento_nombre: '',
@@ -46,7 +47,9 @@ const CampeonatoDetalle: React.FC = () => {
         fecha_salida: '',
         fecha_cancelacion: '',
         es_reembolsable: true,
+        precio_total_manual: undefined as number | undefined, // Added
         enlace_web: '',
+        observaciones: '' // Added
     });
 
     const [habitaciones, setHabitaciones] = useState<Omit<HabitacionReserva, 'id' | 'reserva_id'>[]>([
@@ -77,25 +80,67 @@ const CampeonatoDetalle: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id) return;
+
         try {
             setIsSaving(true);
-            const precioCalculado = calculatePrice(formData as any, habitaciones);
-            await saveReserva({
-                ...formData,
-                campeonato_id: id,
-                estado: 'activa',
-                precio_total_calculado: precioCalculado,
-                precio_total_final: formData.es_reembolsable ? precioCalculado : precioCalculado // Logic placeholder
-            }, habitaciones);
-            setIsModalOpen(false);
-            // Reset
-            setFormData({ alojamiento_nombre: '', fecha_entrada: '', fecha_salida: '', fecha_cancelacion: '', es_reembolsable: true, enlace_web: '' });
-            setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
+            await saveReserva(
+                {
+                    ...formData,
+                    campeonato_id: id as string,
+                    estado: 'activa',
+                    id: editingReservaId || undefined
+                },
+                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion }) => ({
+                    tipo,
+                    numero_habitaciones,
+                    precio_por_habitacion
+                }))
+            );
+            handleCloseModal();
         } catch (err) {
             console.error(err);
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleEditReserva = (reserva: any) => {
+        setEditingReservaId(reserva.id);
+        setFormData({
+            alojamiento_nombre: reserva.alojamiento_nombre || '',
+            fecha_entrada: reserva.fecha_entrada,
+            fecha_salida: reserva.fecha_salida,
+            fecha_cancelacion: reserva.fecha_cancelacion || '',
+            es_reembolsable: reserva.es_reembolsable,
+            precio_total_manual: reserva.precio_total_manual,
+            enlace_web: reserva.enlace_web || '',
+            observaciones: reserva.observaciones || ''
+        });
+        // Ensure habitaciones are in the correct format (without 'id' or 'reserva_id' for the form state)
+        setHabitaciones(reserva.habitaciones?.map((h: HabitacionReserva) => ({
+            tipo: h.tipo,
+            numero_habitaciones: h.numero_habitaciones,
+            precio_por_habitacion: h.precio_por_habitacion
+        })) || [{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingReservaId(null); // Reset editing state
+        // Reset form data
+        setFormData({
+            alojamiento_nombre: '',
+            fecha_entrada: '',
+            fecha_salida: '',
+            fecha_cancelacion: '',
+            es_reembolsable: true,
+            precio_total_manual: undefined,
+            enlace_web: '',
+            observaciones: ''
+        });
+        // Reset habitaciones
+        setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
     };
 
     if (loadingCam || !campeonato) {
@@ -258,16 +303,37 @@ const CampeonatoDetalle: React.FC = () => {
                                                 </a>
                                             )}
                                         </div>
+                                        {r.observaciones && (
+                                            <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs italic text-slate-500 whitespace-pre-wrap">
+                                                "{r.observaciones}"
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Quick Actions */}
                                     <div className="flex xl:flex-col justify-end gap-3 border-t xl:border-t-0 xl:border-l dark:border-slate-800 pt-6 xl:pt-0 xl:pl-8">
-                                        <Button variant="ghost" size="icon" disabled={campeonato.estado === 'cerrado'}>
-                                            <Edit3 className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="hover:bg-rose-50 dark:hover:bg-rose-950/30" disabled={campeonato.estado === 'cerrado'}>
-                                            <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                disabled={campeonato.estado === 'cerrado'}
+                                                onClick={() => handleEditReserva(r)} // Call handleEditReserva
+                                            >
+                                                <Edit3 className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                disabled={campeonato.estado === 'cerrado'}
+                                                onClick={() => updateReservaStatus(r.id, r.estado === 'activa' ? 'cancelada' : 'activa')} // Call updateReservaStatus
+                                            >
+                                                {r.estado === 'activa' ? (
+                                                    <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
+                                                ) : (
+                                                    <RefreshCw className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -279,8 +345,8 @@ const CampeonatoDetalle: React.FC = () => {
             {/* Add/Edit Modal */}
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Detalles del Alojamiento"
+                onClose={handleCloseModal} // Use handleCloseModal
+                title={editingReservaId ? "Editar Alojamiento" : "Añadir Alojamiento"} // Conditional title
             >
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="space-y-4">
@@ -335,6 +401,15 @@ const CampeonatoDetalle: React.FC = () => {
                             value={formData.enlace_web}
                             onChange={e => setFormData({ ...formData, enlace_web: e.target.value })}
                         />
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold mb-2 ml-1">Observaciones</label>
+                            <textarea
+                                className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-primary/50 transition-all min-h-[100px]"
+                                placeholder="Detalles sobre el check-in, desayuno, etc..."
+                                value={formData.observaciones}
+                                onChange={e => setFormData({ ...formData, observaciones: e.target.value })}
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-4 pt-4 border-t dark:border-slate-800">

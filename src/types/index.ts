@@ -6,6 +6,7 @@ export interface Campeonato {
     id: string;
     nombre: string;
     fecha: string;
+    fecha_fin: string; // Nuevo campo para campeonatos de varios días
     localidad: string;
     numero_personas: number;
     estado: EstadoCampeonato;
@@ -25,6 +26,7 @@ export interface Reserva {
     precio_total_calculado: number;
     precio_total_final: number;
     enlace_web?: string;
+    observaciones?: string; // Nuevo campo para notas
     created_at: string;
     updated_at: string;
     // Habitaciones related info if flattened or joined

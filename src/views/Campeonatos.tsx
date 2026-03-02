@@ -32,6 +32,7 @@ const Campeonatos: React.FC = () => {
     const [formData, setFormData] = useState({
         nombre: '',
         fecha: '',
+        fecha_fin: '', // Nuevo campo
         localidad: '',
         numero_personas: 1
     });
@@ -58,6 +59,7 @@ const Campeonatos: React.FC = () => {
         setFormData({
             nombre: campeonato.nombre,
             fecha: campeonato.fecha,
+            fecha_fin: campeonato.fecha_fin || '',
             localidad: campeonato.localidad,
             numero_personas: campeonato.numero_personas
         });
@@ -67,7 +69,7 @@ const Campeonatos: React.FC = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingId(null);
-        setFormData({ nombre: '', fecha: '', localidad: '', numero_personas: 1 });
+        setFormData({ nombre: '', fecha: '', fecha_fin: '', localidad: '', numero_personas: 1 });
     };
 
     if (error) {
@@ -155,7 +157,11 @@ const Campeonatos: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 group/icon">
                                             <CalendarIcon className="w-5 h-5 text-primary/60 group-hover/icon:text-primary transition-colors" />
-                                            {format(new Date(c.fecha), "PPP", { locale: es })}
+                                            {format(new Date(c.fecha), "d MMM", { locale: es })}
+                                            {c.fecha_fin && c.fecha_fin !== c.fecha && (
+                                                <> - {format(new Date(c.fecha_fin), "d MMM yyyy", { locale: es })}</>
+                                            )}
+                                            {!c.fecha_fin && format(new Date(c.fecha), " yyyy", { locale: es })}
                                         </div>
                                         <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
                                             <Users className="w-5 h-5 text-blue-500" />
@@ -229,13 +235,21 @@ const Campeonatos: React.FC = () => {
                             onChange={e => setFormData({ ...formData, numero_personas: parseInt(e.target.value) || 1 })}
                         />
                     </div>
-                    <Input
-                        label="Fecha del Evento"
-                        type="date"
-                        required
-                        value={formData.fecha}
-                        onChange={e => setFormData({ ...formData, fecha: e.target.value })}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input
+                            label="Fecha Inicio"
+                            type="date"
+                            required
+                            value={formData.fecha}
+                            onChange={e => setFormData({ ...formData, fecha: e.target.value })}
+                        />
+                        <Input
+                            label="Fecha Fin (Opcional)"
+                            type="date"
+                            value={formData.fecha_fin}
+                            onChange={e => setFormData({ ...formData, fecha_fin: e.target.value })}
+                        />
+                    </div>
                     <div className="flex justify-end gap-3 pt-4">
                         <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
                             Cancelar
