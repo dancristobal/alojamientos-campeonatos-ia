@@ -15,16 +15,18 @@ import {
     Loader2,
     Lock,
     Unlock,
-    AlertCircle
+    AlertCircle,
+    Edit3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Campeonatos: React.FC = () => {
     const navigate = useNavigate();
-    const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato } = useCampeonatos();
+    const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato, updateCampeonato } = useCampeonatos();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -38,14 +40,34 @@ const Campeonatos: React.FC = () => {
         e.preventDefault();
         try {
             setIsCreating(true);
-            await createCampeonato({ ...formData, estado: 'abierto' });
-            setIsModalOpen(false);
-            setFormData({ nombre: '', fecha: '', localidad: '', numero_personas: 1 });
+            if (editingId) {
+                await updateCampeonato(editingId, formData);
+            } else {
+                await createCampeonato({ ...formData, estado: 'abierto' });
+            }
+            handleCloseModal();
         } catch (err) {
             console.error(err);
         } finally {
             setIsCreating(false);
         }
+    };
+
+    const handleEdit = (campeonato: any) => {
+        setEditingId(campeonato.id);
+        setFormData({
+            nombre: campeonato.nombre,
+            fecha: campeonato.fecha,
+            localidad: campeonato.localidad,
+            numero_personas: campeonato.numero_personas
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingId(null);
+        setFormData({ nombre: '', fecha: '', localidad: '', numero_personas: 1 });
     };
 
     if (error) {
@@ -143,6 +165,16 @@ const Campeonatos: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-4 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-t-0 dark:border-slate-800">
+                                    {c.estado === 'abierto' && (
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            onClick={() => handleEdit(c)}
+                                            title="Editar información"
+                                        >
+                                            <Edit3 className="w-5 h-5" />
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="secondary"
                                         size="icon"
@@ -166,11 +198,11 @@ const Campeonatos: React.FC = () => {
                 </div>
             )}
 
-            {/* Add Modal */}
+            {/* Add/Edit Modal */}
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Nuevo Campeonato"
+                onClose={handleCloseModal}
+                title={editingId ? "Editar Campeonato" : "Nuevo Campeonato"}
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <Input

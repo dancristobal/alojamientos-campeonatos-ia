@@ -13,7 +13,7 @@ export function useCampeonatos() {
             const { data, error } = await supabase
                 .from('campeonatos')
                 .select('*')
-                .order('fecha', { ascending: false });
+                .order('fecha', { ascending: true });
 
             if (error) throw error;
             setCampeonatos(data || []);
@@ -35,6 +35,21 @@ export function useCampeonatos() {
             if (error) throw error;
             setCampeonatos(prev => [data, ...prev]);
             return data;
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        }
+    };
+
+    const updateCampeonato = async (id: string, updates: Partial<Omit<Campeonato, 'id' | 'created_at'>>) => {
+        try {
+            const { error } = await supabase
+                .from('campeonatos')
+                .update(updates)
+                .eq('id', id);
+
+            if (error) throw error;
+            setCampeonatos(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -81,6 +96,7 @@ export function useCampeonatos() {
         error,
         refresh: fetchCampeonatos,
         createCampeonato,
+        updateCampeonato,
         updateCampeonatoStatus,
         deleteCampeonato
     };
