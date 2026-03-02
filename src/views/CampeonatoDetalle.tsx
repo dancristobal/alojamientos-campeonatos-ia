@@ -321,8 +321,9 @@ const CampeonatoDetalle: React.FC = () => {
                             </div>
                             {formData.es_reembolsable && (
                                 <Input
-                                    label="Límite Cancelación (Opcional)"
+                                    label="Límite Cancelación (Obligatoria)"
                                     type="date"
+                                    required
                                     value={formData.fecha_cancelacion}
                                     onChange={e => setFormData({ ...formData, fecha_cancelacion: e.target.value })}
                                 />
