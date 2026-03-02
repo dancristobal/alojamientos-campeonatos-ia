@@ -27,6 +27,7 @@ import { supabase } from '../lib/supabase';
 import Button from '../components/Button';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { Link } from 'react-router-dom';
 import type { Reserva } from '../types';
 
 function cn(...inputs: ClassValue[]) {
@@ -147,24 +148,26 @@ const Calendario: React.FC = () => {
 
                                 <div className="space-y-1">
                                     {dayCam.map(c => (
-                                        <div
+                                        <Link
                                             key={c.id}
-                                            className="px-2 py-1 bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/30 line-clamp-1"
-                                            title={c.nombre}
+                                            to={`/campeonatos/${c.id}`}
+                                            className="px-2 py-1 bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/30 line-clamp-1 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 group"
+                                            title={`Ver campeonato: ${c.nombre}`}
                                         >
-                                            <Trophy className="w-3 h-3 shrink-0" />
+                                            <Trophy className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />
                                             {c.nombre}
-                                        </div>
+                                        </Link>
                                     ))}
                                     {dayRes.map(r => (
-                                        <div
+                                        <Link
                                             key={r.id}
-                                            className="px-2 py-1 bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-900/30 line-clamp-1"
-                                            title={r.alojamiento_nombre}
+                                            to={`/campeonatos/${r.campeonato_id}`}
+                                            className="px-2 py-1 bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-900/30 line-clamp-1 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
+                                            title={`Ver reserva en ${r.alojamiento_nombre}`}
                                         >
-                                            <Hotel className="w-3 h-3 shrink-0" />
+                                            <Hotel className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />
                                             {r.alojamiento_nombre}
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>
