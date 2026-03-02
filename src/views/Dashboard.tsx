@@ -1,0 +1,218 @@
+import React, { useMemo } from 'react';
+import { useCampeonatos } from '../hooks/useCampeonatos';
+import { supabase } from '../lib/supabase';
+import {
+    Trophy,
+    Hotel,
+    Calendar,
+    AlertCircle,
+    Clock,
+    ChevronRight,
+    TrendingUp,
+    History,
+    Info
+} from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { format, isAfter, isBefore, addDays, parseISO, differenceInDays } from 'date-fns';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import type { Reserva } from '../types';
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
+
+const Dashboard: React.FC = () => {
+    const navigate = useNavigate();
+    const { campeonatos, isLoading: loadingCam } = useCampeonatos();
+    // For the dashboard, we might want a global hook or fetch all reservations
+    // For simplicity in this step, let's fetch all active reservations directly
+    const [allReservas, setAllReservas] = React.useState<Reserva[]>([]);
+    const [loadingRes, setLoadingRes] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchAll = async () => {
+            setLoadingRes(true);
+            const { data } = await supabase.from('reservas').select('*, campeonato:campeonatos(*)');
+            setAllReservas(data || []);
+            setLoadingRes(false);
+        };
+        fetchAll();
+    }, []);
+
+    const activeCampeonatos = useMemo(() => campeonatos.filter(c => c.estado === 'abierto'), [campeonatos]);
+
+    const metrics = useMemo(() => {
+        const now = new Date();
+        const next7Days = addDays(now, 7);
+        const next3Days = addDays(now, 3);
+
+        return {
+            totalActivas: allReservas.filter(r => r.estado === 'activa').length,
+            proximasCancelaciones: allReservas.filter(r =>
+                r.estado === 'activa' &&
+                r.fecha_cancelacion &&
+                isAfter(parseISO(r.fecha_cancelacion), now) &&
+                isBefore(parseISO(r.fecha_cancelacion), next7Days)
+            ).sort((a, b) => parseISO(a.fecha_cancelacion!).getTime() - parseISO(b.fecha_cancelacion!).getTime()),
+            criticas: allReservas.filter(r =>
+                r.estado === 'activa' &&
+                r.fecha_cancelacion &&
+                isBefore(parseISO(r.fecha_cancelacion), next3Days) &&
+                isAfter(parseISO(r.fecha_cancelacion), now)
+            ),
+            proximasEntradas: allReservas.filter(r =>
+                r.estado === 'activa' &&
+                isAfter(parseISO(r.fecha_entrada), now) &&
+                isBefore(parseISO(r.fecha_entrada), next7Days)
+            ).sort((a, b) => parseISO(a.fecha_entrada).getTime() - parseISO(b.fecha_entrada).getTime()),
+        };
+    }, [allReservas]);
+
+    if (loadingCam || loadingRes) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 gap-6 glass rounded-[3rem]">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <TrendingUp className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-primary" />
+                </div>
+                <p className="font-bold text-slate-400 animate-pulse tracking-widest uppercase text-xs">Calculando Métricas...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-10 animate-in fade-in duration-1000">
+            {/* Welcome Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                    <h1 className="text-4xl lg:text-5xl font-black tracking-tight">
+                        Panel de <span className="text-primary italic">Resumen</span>
+                    </h1>
+                    <p className="text-muted-foreground mt-2 text-lg lg:text-xl max-w-2xl">
+                        Vista global de la logística de alojamiento para tus próximos campeonatos.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter">Sistema Operativo</span>
+                </div>
+            </div>
+
+            {/* Hero Metrics */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                    { label: 'Campeonatos Activos', value: activeCampeonatos.length, icon: Trophy, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+                    { label: 'Reservas Totales', value: metrics.totalActivas, icon: Hotel, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+                    { label: 'Alertas Críticas', value: metrics.criticas.length, icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+                    { label: 'Próximas Cancelaciones', value: metrics.proximasCancelaciones.length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+                ].map((m, i) => (
+                    <div key={i} className="glass p-8 rounded-[2.5rem] relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                        <m.icon className={cn("w-12 h-12 absolute -right-2 -bottom-2 opacity-5 scale-150 group-hover:scale-[2] transition-transform duration-700", m.color)} />
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4", m.bg)}>
+                            <m.icon className={cn("w-6 h-6", m.color)} />
+                        </div>
+                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">{m.label}</p>
+                        <p className="text-4xl font-black mt-1 tracking-tighter">{m.value}</p>
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+                {/* Critical Alerts / Upcoming Cancellations */}
+                <section className="space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-2xl font-black flex items-center gap-3">
+                            <History className="w-6 h-6 text-amber-500" />
+                            Límites de Cancelación
+                        </h2>
+                        <Badge variant="warning">{metrics.proximasCancelaciones.length} próximas</Badge>
+                    </div>
+
+                    <div className="space-y-4">
+                        {metrics.proximasCancelaciones.length === 0 ? (
+                            <div className="glass p-12 text-center rounded-[2.5rem] border-dashed border-2">
+                                <p className="text-muted-foreground italic">No hay cancelaciones próximas en los próximos 7 días.</p>
+                            </div>
+                        ) : (
+                            metrics.proximasCancelaciones.map(r => (
+                                <div key={r.id} className="glass p-6 rounded-3xl flex items-center gap-6 border-l-4 border-amber-400 group hover:bg-amber-50/10 transition-colors">
+                                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                                        <Hotel className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold truncate">{r.alojamiento_nombre}</h4>
+                                        <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xs font-black text-amber-600 uppercase">En {differenceInDays(parseISO(r.fecha_cancelacion!), new Date())} días</p>
+                                        <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
+                                    </div>
+                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg">
+                                        <ChevronRight className="w-5 h-5" />
+                                    </Link>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+
+                {/* Upcoming Check-ins */}
+                <section className="space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-2xl font-black flex items-center gap-3">
+                            <Calendar className="w-6 h-6 text-emerald-500" />
+                            Próximas Entradas
+                        </h2>
+                        <Badge variant="success">{metrics.proximasEntradas.length} previstas</Badge>
+                    </div>
+
+                    <div className="space-y-4">
+                        {metrics.proximasEntradas.length === 0 ? (
+                            <div className="glass p-12 text-center rounded-[2.5rem] border-dashed border-2">
+                                <p className="text-muted-foreground italic">Tranquilidad por ahora. No hay entradas en los próximos 7 días.</p>
+                            </div>
+                        ) : (
+                            metrics.proximasEntradas.map(r => (
+                                <div key={r.id} className="glass p-6 rounded-3xl flex items-center gap-6 border-l-4 border-emerald-400 group hover:bg-emerald-50/10 transition-colors">
+                                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                                        <Calendar className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold truncate">{r.alojamiento_nombre}</h4>
+                                        <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xs font-black text-emerald-600 uppercase">¡{differenceInDays(parseISO(r.fecha_entrada), new Date())} días!</p>
+                                        <p className="text-sm font-bold">{format(parseISO(r.fecha_entrada), "d MMM")}</p>
+                                    </div>
+                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg">
+                                        <ChevronRight className="w-5 h-5" />
+                                    </Link>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+            </div>
+
+            {/* Quick Access Info */}
+            <div className="glass p-8 rounded-[3rem] bg-slate-900 text-white flex flex-col md:flex-row items-center gap-6">
+                <div className="w-16 h-16 rounded-3xl bg-primary flex items-center justify-center shrink-0">
+                    <Info className="w-8 h-8" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xl font-bold">Consejo de Gestión</h3>
+                    <p className="text-slate-400 mt-1">Recuerda que si cierras un campeonato, todas sus reservas quedarán bloqueadas para evitar modificaciones accidentales tras finalizar el evento.</p>
+                </div>
+                <Button variant="outline" className="border-slate-700 hover:bg-slate-800 text-white" onClick={() => navigate('/campeonatos')}>
+                    Gestionar Campeonatos
+                </Button>
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;
