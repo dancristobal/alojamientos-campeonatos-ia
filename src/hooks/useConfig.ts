@@ -11,6 +11,7 @@ export interface AppConfig {
         nombre: string;
         rol: string;
     };
+    email_notificaciones: string;
 }
 
 const defaultConfig: AppConfig = {
@@ -22,6 +23,7 @@ const defaultConfig: AppConfig = {
         nombre: 'Daniel Cristobal',
         rol: 'Admin',
     },
+    email_notificaciones: 'daniel@example.com',
 };
 
 export const useConfig = () => {

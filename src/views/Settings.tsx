@@ -62,8 +62,8 @@ const SettingsView: React.FC = () => {
 
             {message && (
                 <div className={`p-4 rounded-2xl border ${message.type === 'success'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900/30 dark:text-rose-400'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400'
+                    : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900/30 dark:text-rose-400'
                     }`}>
                     <p className="font-bold flex items-center gap-2">
                         {message.type === 'success' ? <Save className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
@@ -153,13 +153,49 @@ const SettingsView: React.FC = () => {
                 </section>
             </div>
 
+            {/* Notificaciones Section */}
+            <section className="glass p-8 rounded-[2.5rem] space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b dark:border-slate-800">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
+                        <Bell className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <h3 className="text-xl font-bold">Comunicaciones</h3>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-4">
+                        <Input
+                            label="Email para Notificaciones"
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={localConfig.email_notificaciones}
+                            onChange={(e) => setLocalConfig({
+                                ...localConfig,
+                                email_notificaciones: e.target.value
+                            })}
+                        />
+                        <p className="text-xs text-slate-500 italic">Este correo se utilizará para enviarte alertas críticas de cancelación y estados de reservas.</p>
+                    </div>
+
+                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-4 border border-slate-100 dark:border-slate-800">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                            <RefreshCw className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold">Estado del Servicio</h4>
+                            <Badge variant="success" className="mt-1 text-[10px]">Servicio Activo</Badge>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white flex items-center gap-6 border border-slate-800">
                 <div className="flex-1">
-                    <h4 className="font-bold flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-primary" />
-                        Persistencia en la Nube
+                    <h4 className="font-bold flex items-center gap-2 text-primary">
+                        <Save className="w-4 h-4" />
+                        Consistencia de Datos
                     </h4>
-                    <p className="text-slate-400 text-sm mt-1">Estos ajustes se guardan en Supabase y son compartidos entre todos tus dispositivos.</p>
+                    <p className="text-slate-400 text-sm mt-1">Tu configuración se sincroniza automáticamente con Supabase para asegurar que tus umbrales y contactos estén siempre actualizados.</p>
                 </div>
             </div>
         </div>
