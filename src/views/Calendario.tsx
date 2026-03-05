@@ -27,8 +27,8 @@ import { supabase } from '../lib/supabase';
 import Button from '../components/Button';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate, Link } from 'react-router-dom';
-import { useConfig } from '../hooks/useConfig';
+import { Link } from 'react-router-dom';
+
 import type { Reserva } from '../types';
 
 function cn(...inputs: ClassValue[]) {
