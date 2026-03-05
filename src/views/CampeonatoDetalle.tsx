@@ -23,14 +23,15 @@ import {
     RefreshCw,
     AlertCircle,
     Clock,
-    Download
+    Download,
+    XCircle
 } from 'lucide-react';
 
 import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { HabitacionReserva } from '../types';
+import type { HabitacionReserva, EstadoReserva } from '../types';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -42,7 +43,7 @@ const CampeonatoDetalle: React.FC = () => {
     const navigate = useNavigate();
     const { config } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
-    const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, calculatePrice } = useReservas(id);
+    const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, deleteReserva, calculatePrice } = useReservas(id);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -133,24 +134,38 @@ const CampeonatoDetalle: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await saveReserva(
-                {
-                    ...formData,
-                    campeonato_id: id as string,
-                    estado: 'activa',
-                    id: editingReservaId || undefined
-                },
-                habitaciones.map(({ numero_habitaciones, precio_por_habitacion, capacidad }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
-                    numero_habitaciones,
-                    precio_por_habitacion,
-                    capacidad
-                }))
+
+            const sanitizedData = {
+                ...formData,
+                fecha_cancelacion: formData.fecha_cancelacion || null,
+                campeonato_id: id as string,
+                estado: 'activa' as EstadoReserva,
+                id: editingReservaId || undefined
+            };
+
+            await saveReserva(sanitizedData, habitaciones.map(({ numero_habitaciones, precio_por_habitacion, capacidad }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
+                numero_habitaciones,
+                precio_por_habitacion,
+                capacidad
+            }))
             );
             handleCloseModal();
         } catch (err) {
             console.error(err);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDeleteReserva = async (id: string) => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar esta reserva por completo? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            await deleteReserva(id);
+        } catch (err) {
+            alert('Error al eliminar la reserva');
         }
     };
 
@@ -482,14 +497,24 @@ const CampeonatoDetalle: React.FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                title={r.estado === 'activa' ? "Marcar como Cancelada" : "Reactivar Reserva"}
                                                 disabled={campeonato.estado === 'cerrado'}
-                                                onClick={() => updateReservaStatus(r.id, r.estado === 'activa' ? 'cancelada' : 'activa')} // Call updateReservaStatus
+                                                onClick={() => updateReservaStatus(r.id, r.estado === 'activa' ? 'cancelada' : 'activa')}
                                             >
                                                 {r.estado === 'activa' ? (
-                                                    <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
+                                                    <XCircle className="w-5 h-5 text-slate-400 group-hover:text-amber-500 transition-colors" />
                                                 ) : (
                                                     <RefreshCw className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                                                 )}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Eliminar Permanente"
+                                                disabled={campeonato.estado === 'cerrado'}
+                                                onClick={() => handleDeleteReserva(r.id)}
+                                            >
+                                                <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
                                             </Button>
                                         </div>
                                     </div>

@@ -107,6 +107,30 @@ export function useReservas(campeonatoId?: string) {
         }
     };
 
+    const deleteReserva = async (id: string) => {
+        try {
+            // 1. Delete associated rooms first to avoid FK constraints
+            const { error: roomsError } = await supabase
+                .from('habitaciones_reserva')
+                .delete()
+                .eq('reserva_id', id);
+
+            if (roomsError) throw roomsError;
+
+            // 2. Delete the reservation
+            const { error: resError } = await supabase
+                .from('reservas')
+                .delete()
+                .eq('id', id);
+
+            if (resError) throw resError;
+            setReservas(prev => prev.filter(r => r.id !== id));
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        }
+    };
+
     useEffect(() => {
         fetchReservas();
     }, [fetchReservas]);
@@ -118,6 +142,7 @@ export function useReservas(campeonatoId?: string) {
         refresh: fetchReservas,
         saveReserva,
         updateReservaStatus,
+        deleteReserva,
         calculatePrice
     };
 }

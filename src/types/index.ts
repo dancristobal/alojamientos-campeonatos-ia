@@ -5,7 +5,7 @@ export interface Campeonato {
     id: string;
     nombre: string;
     fecha: string;
-    fecha_fin: string; // Nuevo campo para campeonatos de varios días
+    fecha_fin?: string | null;
     localidad: string;
     numero_personas: number;
     estado: EstadoCampeonato;
@@ -18,7 +18,7 @@ export interface Reserva {
     alojamiento_nombre?: string;
     fecha_entrada: string;
     fecha_salida: string;
-    fecha_cancelacion?: string;
+    fecha_cancelacion?: string | null;
     es_reembolsable: boolean;
     estado: EstadoReserva;
     precio_total_manual?: number;

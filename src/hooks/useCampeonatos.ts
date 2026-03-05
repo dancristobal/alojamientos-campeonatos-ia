@@ -73,6 +73,28 @@ export function useCampeonatos() {
 
     const deleteCampeonato = async (id: string) => {
         try {
+            // 1. Get all reservations to delete their rooms
+            const { data: resData } = await supabase
+                .from('reservas')
+                .select('id')
+                .eq('campeonato_id', id);
+
+            if (resData && resData.length > 0) {
+                const resIds = resData.map(r => r.id);
+                // 2. Delete rooms for those reservations
+                await supabase
+                    .from('habitaciones_reserva')
+                    .delete()
+                    .in('reserva_id', resIds);
+
+                // 3. Delete reservations
+                await supabase
+                    .from('reservas')
+                    .delete()
+                    .eq('campeonato_id', id);
+            }
+
+            // 4. Delete the championship
             const { error } = await supabase
                 .from('campeonatos')
                 .delete()

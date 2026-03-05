@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfig } from '../hooks/useConfig';
 import { useCampeonatos } from '../hooks/useCampeonatos';
+import type { EstadoCampeonato } from '../types';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import { Input } from '../components/Input';
@@ -18,6 +19,7 @@ import {
     Lock,
     Unlock,
     AlertCircle,
+    Trash2,
     Edit3
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
@@ -26,7 +28,7 @@ import { es } from 'date-fns/locale';
 const Campeonatos: React.FC = () => {
     const navigate = useNavigate();
     const { config, isLoading: loadingCfg } = useConfig();
-    const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato, updateCampeonato } = useCampeonatos();
+    const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato, updateCampeonato, deleteCampeonato } = useCampeonatos();
     const [reservas, setReservas] = useState<any[]>([]);
     const [loadingRes, setLoadingRes] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,10 +86,17 @@ const Campeonatos: React.FC = () => {
         e.preventDefault();
         try {
             setIsCreating(true);
+
+            // Clean data: replace empty strings with null for the database
+            const dataToSave = {
+                ...formData,
+                fecha_fin: formData.fecha_fin || null
+            };
+
             if (editingId) {
-                await updateCampeonato(editingId, formData);
+                await updateCampeonato(editingId, dataToSave);
             } else {
-                await createCampeonato({ ...formData, estado: 'abierto' });
+                await createCampeonato({ ...dataToSave, estado: 'abierto' as EstadoCampeonato });
             }
             handleCloseModal();
         } catch (err) {
@@ -113,6 +122,18 @@ const Campeonatos: React.FC = () => {
         setIsModalOpen(false);
         setEditingId(null);
         setFormData({ nombre: '', fecha: '', fecha_fin: '', localidad: '', numero_personas: 1 });
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este campeonato y todas sus reservas por completo? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            await deleteCampeonato(id);
+        } catch (err) {
+            alert('Error al eliminar el campeonato');
+        }
     };
 
     if (error) {
@@ -239,6 +260,15 @@ const Campeonatos: React.FC = () => {
                                         title={c.estado === 'abierto' ? 'Cerrar campeonato' : 'Abrir campeonato'}
                                     >
                                         {c.estado === 'abierto' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        onClick={() => handleDelete(c.id)}
+                                        title="Eliminar campeonato"
+                                        className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
                                     </Button>
                                     <Button
                                         variant="primary"
