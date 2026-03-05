@@ -13,33 +13,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-
         if (isOpen) {
             document.body.style.overflow = 'hidden';
-            window.addEventListener('keydown', handleEscape);
         }
 
         return () => {
             document.body.style.overflow = 'unset';
-            window.removeEventListener('keydown', handleEscape);
         };
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     return createPortal(
         <div
             className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onClose();
-                }
-            }}
         >
             <div
                 ref={modalRef}

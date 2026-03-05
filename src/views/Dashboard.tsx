@@ -180,15 +180,18 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className={cn(
-                                                "text-xs font-black uppercase",
+                                                "text-[10px] sm:text-xs font-black uppercase",
                                                 isCritical ? "text-rose-600" : "text-amber-600"
                                             )}>
-                                                {daysRemaining <= 0 ? "¡HOY!" : `En ${daysRemaining} días`}
+                                                {daysRemaining <= 0 ? "¡HOY!" : <>{daysRemaining}<span className="hidden sm:inline"> días</span><span className="inline sm:hidden"> d</span></>}
                                             </p>
                                             <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
                                         </div>
-                                        <Link to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg shrink-0">
-                                            <ChevronRight className="w-5 h-5" />
+                                        <Link
+                                            to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`}
+                                            className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 sm:bg-transparent hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl shrink-0 transition-colors"
+                                        >
+                                            <ChevronRight className="w-5 h-5 text-slate-400 sm:text-slate-600" />
                                         </Link>
                                     </div>
                                 );
@@ -224,11 +227,18 @@ const Dashboard: React.FC = () => {
                                         <p className="text-xs sm:text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className="text-[10px] sm:text-xs font-black text-emerald-600 uppercase">¡{differenceInDays(parseISO(r.fecha_entrada), new Date())} d!</p>
+                                        <p className="text-[10px] sm:text-xs font-black text-emerald-600 uppercase">
+                                            ¡{differenceInDays(parseISO(r.fecha_entrada), new Date())}
+                                            <span className="hidden sm:inline"> días</span>
+                                            <span className="inline sm:hidden"> d</span>!
+                                        </p>
                                         <p className="text-sm font-bold">{format(parseISO(r.fecha_entrada), "d MMM")}</p>
                                     </div>
-                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg shrink-0">
-                                        <ChevronRight className="w-5 h-5" />
+                                    <Link
+                                        to={`/campeonatos/${r.campeonato_id}`}
+                                        className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 sm:bg-transparent hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl shrink-0 transition-colors"
+                                    >
+                                        <ChevronRight className="w-5 h-5 text-slate-400 sm:text-slate-600" />
                                     </Link>
                                 </div>
                             ))
