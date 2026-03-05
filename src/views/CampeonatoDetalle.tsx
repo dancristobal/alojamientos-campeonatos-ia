@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import * as ics from 'ics';
 import { useCampeonatos } from '../hooks/useCampeonatos';
 import { useReservas } from '../hooks/useReservas';
@@ -39,6 +39,7 @@ function cn(...inputs: ClassValue[]) {
 const CampeonatoDetalle: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
+    const navigate = useNavigate();
     const { config } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     const { reservas, isLoading: loadingRes, saveReserva, updateReservaStatus, calculatePrice } = useReservas(id);
@@ -61,12 +62,12 @@ const CampeonatoDetalle: React.FC = () => {
     });
 
     const [habitaciones, setHabitaciones] = useState<Omit<HabitacionReserva, 'id' | 'reserva_id'>[]>([
-        { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }
+        { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }
     ]);
 
     const totalPlazas = reservas.reduce((acc, r) => {
         const plazasReserva = r.habitaciones?.reduce((sum, h) => {
-            return sum + (h.numero_habitaciones * (h.tipo === 'doble' ? 2 : 1));
+            return sum + (h.numero_habitaciones * (h.capacidad || (h.tipo === 'doble' ? 2 : 1)));
         }, 0) || 0;
         return acc + (r.estado === 'activa' ? plazasReserva : 0);
     }, 0);
@@ -85,7 +86,7 @@ const CampeonatoDetalle: React.FC = () => {
     }, [reservas, config]);
 
     const handleAddRoom = () => {
-        setHabitaciones([...habitaciones, { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
+        setHabitaciones([...habitaciones, { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
     };
 
     const handleRemoveRoom = (index: number) => {
@@ -139,10 +140,11 @@ const CampeonatoDetalle: React.FC = () => {
                     estado: 'activa',
                     id: editingReservaId || undefined
                 },
-                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
+                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion, capacidad }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
                     tipo,
                     numero_habitaciones,
-                    precio_por_habitacion
+                    precio_por_habitacion,
+                    capacidad
                 }))
             );
             handleCloseModal();
@@ -200,8 +202,9 @@ const CampeonatoDetalle: React.FC = () => {
         setHabitaciones(reserva.habitaciones?.map((h: HabitacionReserva) => ({
             tipo: h.tipo,
             numero_habitaciones: h.numero_habitaciones,
-            precio_por_habitacion: h.precio_por_habitacion
-        })) || [{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
+            precio_por_habitacion: h.precio_por_habitacion,
+            capacidad: h.capacidad || (h.tipo === 'doble' ? 2 : 1)
+        })) || [{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
         setIsModalOpen(true);
     };
 
@@ -220,10 +223,15 @@ const CampeonatoDetalle: React.FC = () => {
             observaciones: ''
         });
         // Reset habitaciones
-        setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0 }]);
+        setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
+
+        // Clear query parameters from URL
+        if (location.search.includes('reservaId')) {
+            navigate(location.pathname, { replace: true });
+        }
     };
 
-    // Auto-open specific reservation if ID is in URL
+    // Auto-open logic for Dashboard links
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const reservaId = params.get('reservaId');
@@ -231,10 +239,13 @@ const CampeonatoDetalle: React.FC = () => {
         if (reservaId && reservas.length > 0 && !isModalOpen && !editingReservaId) {
             const reservaToEdit = reservas.find(r => r.id === reservaId);
             if (reservaToEdit) {
+                // Clear the URL immediately to prevent the loop after closing
+                navigate(location.pathname, { replace: true });
+                // Then open the modal
                 handleEditReserva(reservaToEdit);
             }
         }
-    }, [location.search, reservas, isModalOpen, editingReservaId]);
+    }, [id, location.search, reservas.length, isModalOpen, editingReservaId, navigate, location.pathname]);
 
     if (loadingCam || !campeonato) {
         return (loadingCam ? <div className="p-20 text-center">Cargando detalles...</div> : <div>Cargando...</div>);
@@ -384,6 +395,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                 <div key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-medium flex items-center gap-2">
                                                     <span className="text-primary font-bold">{h.numero_habitaciones}x</span>
                                                     {h.tipo === 'doble' ? 'Doble' : 'Individual'}
+                                                    <span className="text-slate-500 font-bold">({h.capacidad} plazas)</span>
                                                     <span className="text-slate-400">({h.precio_por_habitacion}€/n)</span>
                                                 </div>
                                             ))}
@@ -573,11 +585,11 @@ const CampeonatoDetalle: React.FC = () => {
                                         </button>
                                     )}
                                 </div>
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-4 gap-3">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold ml-1">Tipo</label>
                                         <select
-                                            className="w-full h-12 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                                            className="w-full h-12 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl px-2 text-sm outline-none focus:ring-2 focus:ring-primary"
                                             value={room.tipo}
                                             onChange={e => handleUpdateRoom(idx, 'tipo', e.target.value as TipoHabitacion)}
                                         >
@@ -589,9 +601,17 @@ const CampeonatoDetalle: React.FC = () => {
                                         label="Cant."
                                         type="number"
                                         min="1"
-                                        className="h-12"
+                                        className="h-12 px-2"
                                         value={room.numero_habitaciones}
                                         onChange={e => handleUpdateRoom(idx, 'numero_habitaciones', parseInt(e.target.value) || 0)}
+                                    />
+                                    <Input
+                                        label="Plazas"
+                                        type="number"
+                                        min="1"
+                                        className="h-12 px-2"
+                                        value={room.capacidad}
+                                        onChange={e => handleUpdateRoom(idx, 'capacidad', parseInt(e.target.value) || 0)}
                                     />
                                     <Input
                                         label="Precio/N"
@@ -625,7 +645,7 @@ const CampeonatoDetalle: React.FC = () => {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-6">
-                        <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
+                        <Button variant="ghost" type="button" onClick={handleCloseModal}>
                             Descartar
                         </Button>
                         <Button type="submit" isLoading={isSaving} leftIcon={Hotel}>

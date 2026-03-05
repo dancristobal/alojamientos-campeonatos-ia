@@ -39,6 +39,7 @@ export interface HabitacionReserva {
     tipo: TipoHabitacion;
     numero_habitaciones: number;
     precio_por_habitacion: number;
+    capacidad: number;
 }
 
 export interface DashboardMetrics {
