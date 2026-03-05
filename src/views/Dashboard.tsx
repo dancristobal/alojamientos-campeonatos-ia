@@ -136,32 +136,55 @@ const Dashboard: React.FC = () => {
                         <Badge variant="warning">{metrics.proximasCancelaciones.length} próximas</Badge>
                     </div>
 
+
                     <div className="space-y-4">
                         {metrics.proximasCancelaciones.length === 0 ? (
                             <div className="glass p-12 text-center rounded-[2.5rem] border-dashed border-2">
-                                <p className="text-muted-foreground italic">No hay cancelaciones próximas en los próximos 7 días.</p>
+                                <p className="text-muted-foreground italic">No hay cancelaciones próximas.</p>
                             </div>
                         ) : (
-                            metrics.proximasCancelaciones.map(r => (
-                                <div key={r.id} className="glass p-6 rounded-3xl flex items-center gap-6 border-l-4 border-amber-400 group hover:bg-amber-50/10 transition-colors">
-                                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                                        <Hotel className="w-6 h-6 text-slate-400" />
+                            metrics.proximasCancelaciones.map(r => {
+                                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), new Date());
+                                const isCritical = daysRemaining <= config.umbrales.critica;
+
+                                return (
+                                    <div
+                                        key={r.id}
+                                        className={cn(
+                                            "glass p-6 rounded-3xl flex items-center gap-6 border-l-4 transition-all group",
+                                            isCritical
+                                                ? "border-rose-500 bg-rose-50/5 hover:bg-rose-50/10"
+                                                : "border-amber-400 hover:bg-amber-50/10"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm",
+                                            isCritical ? "bg-rose-100 dark:bg-rose-900/20" : "bg-white dark:bg-slate-800"
+                                        )}>
+                                            <Hotel className={cn("w-6 h-6", isCritical ? "text-rose-600" : "text-slate-400")} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className={cn("font-bold truncate", isCritical && "text-rose-950 dark:text-rose-100")}>{r.alojamiento_nombre}</h4>
+                                            <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className={cn(
+                                                "text-xs font-black uppercase",
+                                                isCritical ? "text-rose-600" : "text-amber-600"
+                                            )}>
+                                                {daysRemaining <= 0 ? "¡HOY!" : `En ${daysRemaining} días`}
+                                            </p>
+                                            <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
+                                        </div>
+                                        <Link to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                                            <ChevronRight className="w-5 h-5" />
+                                        </Link>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold truncate">{r.alojamiento_nombre}</h4>
-                                        <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-xs font-black text-amber-600 uppercase">En {differenceInDays(parseISO(r.fecha_cancelacion!), new Date())} días</p>
-                                        <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
-                                    </div>
-                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg">
-                                        <ChevronRight className="w-5 h-5" />
-                                    </Link>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
+
                 </section>
 
                 {/* Upcoming Check-ins */}

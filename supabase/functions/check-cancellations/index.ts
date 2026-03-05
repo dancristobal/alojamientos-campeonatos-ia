@@ -14,7 +14,7 @@ serve(async (req: Request) => {
             SUPABASE_SERVICE_ROLE_KEY!
         )
 
-        // 1. Fetch notification email from configuration
+        // 1. Fetch notification email and thresholds from configuration
         const { data: configData, error: configError } = await supabase
             .from('configuracion')
             .select('valor')
@@ -25,17 +25,19 @@ serve(async (req: Request) => {
             console.error('Error fetching config:', configError)
         }
 
-        // Extract email from JSONB field 'valor'. Fallback if not found.
         const notificationEmail = configData?.valor?.email_notificaciones || "dancristobal@gmail.com"
-        console.log(`Sending alerts to: ${notificationEmail}`)
+        const thresholdCritica = configData?.valor?.umbrales?.critica || 3
+        const thresholdProxima = configData?.valor?.umbrales?.proxima || 7
 
-        // 2. Fetch active reservations with cancellation date in the next 3 days
+        console.log(`Config: Email=${notificationEmail}, Critica=${thresholdCritica}d, Proxima=${thresholdProxima}d`)
+
+        // 2. Fetch active reservations with cancellation date within the longest threshold
         const now = new Date()
-        now.setHours(0, 0, 0, 0) // Start of today
+        now.setHours(0, 0, 0, 0)
 
-        const threeDaysFromNow = new Date()
-        threeDaysFromNow.setDate(now.getDate() + 3)
-        threeDaysFromNow.setHours(23, 59, 59, 999) // End of day 3
+        const maxThresholdLimit = new Date()
+        maxThresholdLimit.setDate(now.getDate() + thresholdProxima)
+        maxThresholdLimit.setHours(23, 59, 59, 999)
 
         const { data: reservas, error } = await supabase
             .from('reservas')
@@ -43,35 +45,64 @@ serve(async (req: Request) => {
             .eq('estado', 'activa')
             .not('fecha_cancelacion', 'is', null)
             .gte('fecha_cancelacion', now.toISOString().split('T')[0])
-            .lte('fecha_cancelacion', threeDaysFromNow.toISOString().split('T')[0])
-
+            .lte('fecha_cancelacion', maxThresholdLimit.toISOString().split('T')[0])
 
         if (error) throw error
 
         if (!reservas || reservas.length === 0) {
-            return new Response(JSON.stringify({ message: "No critical cancellations found." }), {
+            return new Response(JSON.stringify({ message: "No cancellations found within thresholds." }), {
                 headers: { "Content-Type": "application/json" },
                 status: 200,
             })
         }
 
-        // 2. Format email content
-        const emailBody = `
-      <h2>⚠️ Alerta de Cancelación de Reservas</h2>
-      <p>Las siguientes reservas tienen su fecha límite de cancelación en los próximos 3 días:</p>
-      <ul>
-        ${reservas.map((r: any) => `
-          <li>
-            <strong>${r.alojamiento_nombre}</strong> (${r.campeonato?.nombre})<br>
-            Límite: ${new Date(r.fecha_cancelacion).toLocaleDateString('es-ES')}<br>
-            Entrada: ${new Date(r.fecha_entrada).toLocaleDateString('es-ES')}
-          </li>
-        `).join('')}
-      </ul>
-      <p>Por favor, revisa estas reservas en la aplicación.</p>
-    `
+        // 3. Categorize
+        const criticas = reservas.filter(r => {
+            const days = Math.ceil((new Date(r.fecha_cancelacion).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            return days <= thresholdCritica
+        })
+        const proximas = reservas.filter(r => {
+            const days = Math.ceil((new Date(r.fecha_cancelacion).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            return days > thresholdCritica && days <= thresholdProxima
+        })
 
-        // 3. Send via Resend
+        // 4. Format email content
+        const formatSection = (title: string, list: any[], color: string) => {
+            if (list.length === 0) return ""
+            return `
+                <div style="margin-bottom: 25px; border-left: 5px solid ${color}; padding-left: 15px;">
+                    <h3 style="color: ${color}; text-transform: uppercase;">${title} (${list.length})</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        ${list.map(r => `
+                            <li style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                                <strong>${r.alojamiento_nombre}</strong> (${r.campeonato?.nombre})<br>
+                                <span style="font-size: 0.9em; color: #666;">
+                                    Límite: ${new Date(r.fecha_cancelacion).toLocaleDateString('es-ES')}<br>
+                                    Entrada: ${new Date(r.fecha_entrada).toLocaleDateString('es-ES')}
+                                </span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `
+        }
+
+        const emailBody = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+                <h2 style="color: #333;">⚠️ Alerta de Cancelación de Reservas</h2>
+                ${formatSection("🛑 CRÍTICAS (Urgente)", criticas, "#e11d48")}
+                ${formatSection("⏳ PRÓXIMAS", proximas, "#d97706")}
+                <p style="color: #666; font-size: 0.8em; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+                    Por favor, revisa estas reservas en la aplicación.
+                </p>
+            </div>
+        `
+
+        // 5. Send via Resend
+        const subject = criticas.length > 0
+            ? `🚨 ALERTA CRÍTICA: ${criticas.length} cancelaciones urgentes`
+            : `⚠️ Recordatorio: ${proximas.length} cancelaciones próximas`
+
         const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -81,7 +112,7 @@ serve(async (req: Request) => {
             body: JSON.stringify({
                 from: 'ArcheryRes <notifications@resend.dev>',
                 to: [notificationEmail],
-                subject: '⚠️ Alerta: Cancelación Próxima de Alojamiento',
+                subject: subject,
                 html: emailBody,
             }),
         })

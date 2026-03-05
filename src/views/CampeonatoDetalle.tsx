@@ -317,19 +317,35 @@ const CampeonatoDetalle: React.FC = () => {
                                         <div className="flex items-center gap-6 pt-4 border-t dark:border-slate-800">
                                             {r.es_reembolsable && r.fecha_cancelacion && (
                                                 <div className="flex items-center gap-3 text-sm flex-wrap">
+
                                                     <div className="flex items-center gap-2">
-                                                        <Info className="w-4 h-4 text-amber-500" />
+                                                        <Info className="w-4 h-4 text-slate-400" />
                                                         <span className="font-medium">Cancelación:</span>
-                                                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                                                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg text-xs">
                                                             {format(new Date(r.fecha_cancelacion), "PPP", { locale: es })}
                                                         </span>
                                                     </div>
-                                                    {differenceInDays(parseISO(r.fecha_cancelacion), new Date()) <= config.umbrales.critica && (
-                                                        <Badge variant="error" className="animate-pulse shadow-lg shadow-rose-500/20 flex items-center gap-1.5">
-                                                            <AlertCircle className="w-4 h-4" />
-                                                            ¡Atención: Límite Crítico!
-                                                        </Badge>
-                                                    )}
+                                                    {(() => {
+                                                        const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+                                                        if (daysRemaining <= config.umbrales.critica) {
+                                                            return (
+                                                                <Badge variant="error" className="animate-pulse shadow-lg shadow-rose-500/20 flex items-center gap-1.5 px-3">
+                                                                    <AlertCircle className="w-4 h-4" />
+                                                                    ¡Atención: Límite Crítico!
+                                                                </Badge>
+                                                            );
+                                                        }
+                                                        if (daysRemaining <= config.umbrales.proxima) {
+                                                            return (
+                                                                <Badge variant="warning" className="flex items-center gap-1.5 px-3">
+                                                                    <Clock className="w-4 h-4" />
+                                                                    Cancelación Próxima
+                                                                </Badge>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+
                                                 </div>
                                             )}
                                             {r.enlace_web && (
