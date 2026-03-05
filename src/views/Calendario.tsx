@@ -118,8 +118,9 @@ const Calendario: React.FC = () => {
                 {/* Days of Week Header */}
                 <div className="grid grid-cols-7 bg-slate-50 dark:bg-slate-950/50 border-b dark:border-slate-800">
                     {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(d => (
-                        <div key={d} className="py-4 text-center text-xs font-black text-slate-400 tracking-widest">
-                            {d}
+                        <div key={d} className="py-2 sm:py-4 text-center text-[10px] sm:text-xs font-black text-slate-400 tracking-widest">
+                            <span className="hidden sm:inline">{d}</span>
+                            <span className="inline sm:hidden">{d[0]}</span>
                         </div>
                     ))}
                 </div>
@@ -135,13 +136,13 @@ const Calendario: React.FC = () => {
                             <div
                                 key={idx}
                                 className={cn(
-                                    "min-h-[140px] p-2 border-r border-b dark:border-slate-800 last:border-r-0 transition-all hover:bg-slate-50/50 dark:hover:bg-slate-800/20",
+                                    "min-h-[80px] sm:min-h-[140px] p-1 sm:p-2 border-r border-b dark:border-slate-800 last:border-r-0 transition-all hover:bg-slate-50/50 dark:hover:bg-slate-800/20",
                                     !isCurrentMonth && "bg-slate-50/30 dark:bg-slate-900/10 opacity-40"
                                 )}
                             >
-                                <div className="flex justify-between items-center mb-2 px-1">
+                                <div className="flex justify-between items-center mb-1 sm:mb-2 px-1">
                                     <span className={cn(
-                                        "text-sm font-black w-8 h-8 flex items-center justify-center rounded-full transition-colors",
+                                        "text-xs sm:text-sm font-black w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-colors",
                                         isToday ? "bg-primary text-white" : "text-slate-500"
                                     )}>
                                         {format(day, 'd')}

@@ -30,7 +30,7 @@ import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from '
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { TipoHabitacion, HabitacionReserva } from '../types';
+import type { HabitacionReserva } from '../types';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -62,12 +62,12 @@ const CampeonatoDetalle: React.FC = () => {
     });
 
     const [habitaciones, setHabitaciones] = useState<Omit<HabitacionReserva, 'id' | 'reserva_id'>[]>([
-        { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }
+        { numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }
     ]);
 
     const totalPlazas = reservas.reduce((acc, r) => {
         const plazasReserva = r.habitaciones?.reduce((sum, h) => {
-            return sum + (h.numero_habitaciones * (h.capacidad || (h.tipo === 'doble' ? 2 : 1)));
+            return sum + (h.numero_habitaciones * (h.capacidad || 2));
         }, 0) || 0;
         return acc + (r.estado === 'activa' ? plazasReserva : 0);
     }, 0);
@@ -86,7 +86,7 @@ const CampeonatoDetalle: React.FC = () => {
     }, [reservas, config]);
 
     const handleAddRoom = () => {
-        setHabitaciones([...habitaciones, { tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
+        setHabitaciones([...habitaciones, { numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
     };
 
     const handleRemoveRoom = (index: number) => {
@@ -140,8 +140,7 @@ const CampeonatoDetalle: React.FC = () => {
                     estado: 'activa',
                     id: editingReservaId || undefined
                 },
-                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion, capacidad }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
-                    tipo,
+                habitaciones.map(({ numero_habitaciones, precio_por_habitacion, capacidad }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
                     numero_habitaciones,
                     precio_por_habitacion,
                     capacidad
@@ -200,11 +199,10 @@ const CampeonatoDetalle: React.FC = () => {
         });
         // Ensure habitaciones are in the correct format (without 'id' or 'reserva_id' for the form state)
         setHabitaciones(reserva.habitaciones?.map((h: HabitacionReserva) => ({
-            tipo: h.tipo,
             numero_habitaciones: h.numero_habitaciones,
             precio_por_habitacion: h.precio_por_habitacion,
-            capacidad: h.capacidad || (h.tipo === 'doble' ? 2 : 1)
-        })) || [{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
+            capacidad: h.capacidad || 2
+        })) || [{ numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
         setIsModalOpen(true);
     };
 
@@ -223,7 +221,7 @@ const CampeonatoDetalle: React.FC = () => {
             observaciones: ''
         });
         // Reset habitaciones
-        setHabitaciones([{ tipo: 'doble', numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
+        setHabitaciones([{ numero_habitaciones: 1, precio_por_habitacion: 0, capacidad: 2 }]);
 
         // Clear query parameters from URL
         if (location.search.includes('reservaId')) {
@@ -402,7 +400,6 @@ const CampeonatoDetalle: React.FC = () => {
                                             {r.habitaciones?.map((h, i) => (
                                                 <div key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-medium flex items-center gap-2">
                                                     <span className="text-primary font-bold">{h.numero_habitaciones}x</span>
-                                                    {h.tipo === 'doble' ? 'Doble' : 'Individual'}
                                                     <span className="text-slate-500 font-bold">({h.capacidad} plazas)</span>
                                                     <span className="text-slate-400">({h.precio_por_habitacion}€/n)</span>
                                                 </div>
@@ -593,18 +590,7 @@ const CampeonatoDetalle: React.FC = () => {
                                         </button>
                                     )}
                                 </div>
-                                <div className="grid grid-cols-4 gap-3">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold ml-1">Tipo</label>
-                                        <select
-                                            className="w-full h-12 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl px-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                                            value={room.tipo}
-                                            onChange={e => handleUpdateRoom(idx, 'tipo', e.target.value as TipoHabitacion)}
-                                        >
-                                            <option value="doble">Doble</option>
-                                            <option value="individual">Individual</option>
-                                        </select>
-                                    </div>
+                                <div className="grid grid-cols-3 gap-3">
                                     <Input
                                         label="Cant."
                                         type="number"

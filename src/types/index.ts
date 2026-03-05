@@ -1,6 +1,5 @@
 export type EstadoCampeonato = 'abierto' | 'cerrado';
 export type EstadoReserva = 'activa' | 'cancelada' | 'vencida' | 'finalizada';
-export type TipoHabitacion = 'doble' | 'individual';
 
 export interface Campeonato {
     id: string;
@@ -36,7 +35,6 @@ export interface Reserva {
 export interface HabitacionReserva {
     id: string;
     reserva_id: string;
-    tipo: TipoHabitacion;
     numero_habitaciones: number;
     precio_por_habitacion: number;
     capacidad: number;
