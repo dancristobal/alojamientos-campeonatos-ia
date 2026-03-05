@@ -5,17 +5,31 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-const TO_EMAILS = ["dancristobal@gmail.com", "carmengaro8@gmail.com"]
 
-serve(async (req) => {
+serve(async (req: Request) => {
     try {
+
         const supabase = createClient(
             SUPABASE_URL!,
             SUPABASE_SERVICE_ROLE_KEY!
         )
 
+        // 1. Fetch notification email from configuration
+        const { data: configData, error: configError } = await supabase
+            .from('configuracion')
+            .select('valor')
+            .eq('id', 'general')
+            .single()
 
-        // 1. Fetch active reservations with cancellation date in the next 3 days
+        if (configError) {
+            console.error('Error fetching config:', configError)
+        }
+
+        // Extract email from JSONB field 'valor'. Fallback if not found.
+        const notificationEmail = configData?.valor?.email_notificaciones || "dancristobal@gmail.com"
+        console.log(`Sending alerts to: ${notificationEmail}`)
+
+        // 2. Fetch active reservations with cancellation date in the next 3 days
         const now = new Date()
         now.setHours(0, 0, 0, 0) // Start of today
 
@@ -46,7 +60,7 @@ serve(async (req) => {
       <h2>⚠️ Alerta de Cancelación de Reservas</h2>
       <p>Las siguientes reservas tienen su fecha límite de cancelación en los próximos 3 días:</p>
       <ul>
-        ${reservas.map(r => `
+        ${reservas.map((r: any) => `
           <li>
             <strong>${r.alojamiento_nombre}</strong> (${r.campeonato?.nombre})<br>
             Límite: ${new Date(r.fecha_cancelacion).toLocaleDateString('es-ES')}<br>
@@ -66,7 +80,7 @@ serve(async (req) => {
             },
             body: JSON.stringify({
                 from: 'ArcheryRes <notifications@resend.dev>',
-                to: TO_EMAILS,
+                to: [notificationEmail],
                 subject: '⚠️ Alerta: Cancelación Próxima de Alojamiento',
                 html: emailBody,
             }),
@@ -79,7 +93,7 @@ serve(async (req) => {
             status: 200,
         })
 
-    } catch (error) {
+    } catch (error: any) {
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { "Content-Type": "application/json" },
             status: 500,
