@@ -655,11 +655,40 @@ const CampeonatoDetalle: React.FC = () => {
                                     : 0}
                             </span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="font-bold text-slate-600 dark:text-slate-400">Precio Estimado:</span>
-                            <span className="font-black text-2xl text-primary">
+                        <div className="flex justify-between items-center gap-4">
+                            <div className="flex-1">
+                                <span className="font-bold text-slate-600 dark:text-slate-400">Precio Estimado:</span>
+                                <p className="text-[10px] text-slate-400 uppercase font-black">Calculado automáticamente</p>
+                            </div>
+                            <span className={cn(
+                                "font-black transition-all",
+                                formData.precio_total_manual
+                                    ? "text-lg text-slate-400 line-through decoration-slate-300"
+                                    : "text-2xl text-primary"
+                            )}>
                                 {calculatePrice(formData as any, habitaciones).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                             </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-primary/10">
+                            <Input
+                                label="Precio Total Real (Opcional)"
+                                type="number"
+                                step="0.01"
+                                placeholder="Introduce el precio final si es diferente"
+                                value={formData.precio_total_manual || ''}
+                                onChange={e => setFormData({ ...formData, precio_total_manual: parseFloat(e.target.value) || undefined })}
+                                className="bg-white dark:bg-slate-900 border-primary/20"
+                            />
+                            {formData.precio_total_manual && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, precio_total_manual: undefined })}
+                                    className="text-[10px] font-black uppercase text-primary mt-1 ml-1 hover:underline"
+                                >
+                                    ↺ Volver al cálculo automático
+                                </button>
+                            )}
                         </div>
                     </div>
 
