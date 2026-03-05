@@ -13,7 +13,8 @@ import {
     isWithinInterval,
     parseISO,
     startOfDay,
-    endOfDay
+    endOfDay,
+    differenceInDays
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -159,17 +160,32 @@ const Calendario: React.FC = () => {
                                             {c.nombre}
                                         </Link>
                                     ))}
-                                    {dayRes.map(r => (
-                                        <Link
-                                            key={r.id}
-                                            to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`}
-                                            className="px-2 py-1 bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-900/30 line-clamp-1 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
-                                            title={`Ver reserva en ${r.alojamiento_nombre}`}
-                                        >
-                                            <Hotel className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />
-                                            {r.alojamiento_nombre}
-                                        </Link>
-                                    ))}
+
+                                    {dayRes.map(r => {
+                                        const isCritical = r.estado === 'activa' &&
+                                            r.es_reembolsable &&
+                                            r.fecha_cancelacion &&
+                                            differenceInDays(parseISO(r.fecha_cancelacion), new Date()) <= (window as any).__config_umbrales_critica;
+
+                                        return (
+                                            <Link
+                                                key={r.id}
+                                                to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`}
+                                                className={cn(
+                                                    "px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1.5 border line-clamp-1 transition-all hover:text-white dark:hover:text-slate-900 hover:shadow-lg active:scale-95 group",
+                                                    isCritical
+                                                        ? "bg-rose-500/10 text-rose-600 border-rose-200 dark:bg-rose-400/10 dark:text-rose-400 dark:border-rose-900/30 hover:bg-rose-500 hover:shadow-rose-500/20"
+                                                        : "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-400 dark:border-emerald-900/30 hover:bg-emerald-500 hover:shadow-emerald-500/20"
+                                                )}
+                                                title={`${isCritical ? '⚠️ CRÍTICO: ' : ''}Ver reserva en ${r.alojamiento_nombre}`}
+                                            >
+                                                <Hotel className={cn("w-3 h-3 shrink-0 group-hover:scale-110 transition-transform", isCritical && "animate-pulse")} />
+                                                <span className={cn(isCritical && "text-rose-700 dark:text-rose-300 font-black")}>
+                                                    {r.alojamiento_nombre}
+                                                </span>
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );

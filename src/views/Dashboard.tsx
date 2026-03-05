@@ -25,18 +25,23 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { config, isLoading: loadingCfg } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
-    // For the dashboard, we might want a global hook or fetch all reservations
-    // For simplicity in this step, let's fetch all active reservations directly
     const [allReservas, setAllReservas] = React.useState<Reserva[]>([]);
     const [loadingRes, setLoadingRes] = React.useState(true);
 
+    // Inject config into window for shared components if needed
+    React.useEffect(() => {
+        if (config) {
+            (window as any).__config_umbrales_critica = config.umbrales.critica;
+        }
+    }, [config]);
+
     React.useEffect(() => {
         const fetchAll = async () => {
-            setAllReservas([]);
             setLoadingRes(true);
             const { data } = await supabase.from('reservas').select('*, campeonato:campeonatos(*)');
             setAllReservas(data || []);
@@ -44,6 +49,7 @@ const Dashboard: React.FC = () => {
         };
         fetchAll();
     }, []);
+
 
     const activeCampeonatos = useMemo(() => campeonatos.filter(c => c.estado === 'abierto'), [campeonatos]);
 
@@ -164,7 +170,12 @@ const Dashboard: React.FC = () => {
                                             <Hotel className={cn("w-6 h-6", isCritical ? "text-rose-600" : "text-slate-400")} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className={cn("font-bold truncate", isCritical && "text-rose-950 dark:text-rose-100")}>{r.alojamiento_nombre}</h4>
+                                            <h4 className={cn(
+                                                "font-bold truncate transition-colors",
+                                                isCritical ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
+                                            )}>
+                                                {r.alojamiento_nombre}
+                                            </h4>
                                             <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
                                         </div>
                                         <div className="text-right shrink-0">

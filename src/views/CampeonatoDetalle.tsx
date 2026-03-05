@@ -20,7 +20,8 @@ import {
     Info,
     MapPin,
     RefreshCw,
-    AlertCircle
+    AlertCircle,
+    Clock
 } from 'lucide-react';
 import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -279,8 +280,21 @@ const CampeonatoDetalle: React.FC = () => {
                                     {/* Hotel Info */}
                                     <div className="flex-1 space-y-4">
                                         <div className="flex items-start justify-between">
+
                                             <div>
-                                                <h4 className="text-xl font-bold">{r.alojamiento_nombre || "Hotel sin nombre"}</h4>
+                                                <h4 className={cn(
+                                                    "text-xl font-black transition-colors",
+
+                                                    (() => {
+                                                        if (!r.fecha_cancelacion) return "text-slate-900 dark:text-slate-100";
+                                                        const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+                                                        return daysRemaining <= config.umbrales.critica && r.estado === 'activa' && r.es_reembolsable
+                                                            ? "text-rose-600 dark:text-rose-400"
+                                                            : "text-slate-900 dark:text-slate-100";
+                                                    })()
+                                                )}>
+                                                    {r.alojamiento_nombre || "Hotel sin nombre"}
+                                                </h4>
                                                 <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
                                                     <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
                                                         {r.estado.toUpperCase()}
