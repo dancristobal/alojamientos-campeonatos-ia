@@ -231,21 +231,29 @@ const CampeonatoDetalle: React.FC = () => {
         }
     };
 
+    // Track which ID we have already auto-opened during this session to avoid loops
+    const lastAutoOpenedId = React.useRef<string | null>(null);
+
     // Auto-open logic for Dashboard links
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const reservaId = params.get('reservaId');
 
-        if (reservaId && reservas.length > 0 && !isModalOpen && !editingReservaId) {
+        // Reset ref if the ID is gone from URL
+        if (!reservaId) {
+            lastAutoOpenedId.current = null;
+            return;
+        }
+
+        // Only auto-open if we haven't already processed this reservaId
+        if (reservas.length > 0 && reservaId !== lastAutoOpenedId.current) {
             const reservaToEdit = reservas.find(r => r.id === reservaId);
             if (reservaToEdit) {
-                // Clear the URL immediately to prevent the loop after closing
-                navigate(location.pathname, { replace: true });
-                // Then open the modal
+                lastAutoOpenedId.current = reservaId;
                 handleEditReserva(reservaToEdit);
             }
         }
-    }, [id, location.search, reservas.length, isModalOpen, editingReservaId, navigate, location.pathname]);
+    }, [location.search, reservas.length]);
 
     if (loadingCam || !campeonato) {
         return (loadingCam ? <div className="p-20 text-center">Cargando detalles...</div> : <div>Cargando...</div>);
