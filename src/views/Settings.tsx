@@ -43,7 +43,7 @@ const SettingsView: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 text-left">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight flex items-center gap-4">
                         <Settings className="w-10 h-10 text-primary" />
@@ -55,6 +55,7 @@ const SettingsView: React.FC = () => {
                     leftIcon={Save}
                     onClick={handleSave}
                     isLoading={isSaving}
+                    className="w-full sm:w-auto text-left"
                 >
                     Guardar Cambios
                 </Button>
@@ -189,9 +190,9 @@ const SettingsView: React.FC = () => {
                 </div>
             </section>
 
-            <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white flex items-center gap-6 border border-slate-800">
-                <div className="flex-1">
-                    <h4 className="font-bold flex items-center gap-2 text-primary">
+            <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white flex flex-col sm:flex-row items-center gap-6 border border-slate-800">
+                <div className="flex-1 text-center sm:text-left">
+                    <h4 className="font-bold flex items-center justify-center sm:justify-start gap-2 text-primary">
                         <Save className="w-4 h-4" />
                         Consistencia de Datos
                     </h4>

@@ -154,11 +154,11 @@ const Calendario: React.FC = () => {
                                         <Link
                                             key={c.id}
                                             to={`/campeonatos/${c.id}`}
-                                            className="px-2 py-1 bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/30 line-clamp-1 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 group"
+                                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold flex items-center gap-1 sm:gap-1.5 border border-blue-200 dark:border-blue-900/30 line-clamp-1 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-all hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 group"
                                             title={`Ver campeonato: ${c.nombre}`}
                                         >
-                                            <Trophy className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />
-                                            {c.nombre}
+                                            <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0 group-hover:scale-110 transition-transform" />
+                                            <span className="hidden sm:inline">{c.nombre}</span>
                                         </Link>
                                     ))}
 
@@ -173,15 +173,15 @@ const Calendario: React.FC = () => {
                                                 key={r.id}
                                                 to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`}
                                                 className={cn(
-                                                    "px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1.5 border line-clamp-1 transition-all hover:text-white dark:hover:text-slate-900 hover:shadow-lg active:scale-95 group",
+                                                    "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] font-black flex items-center gap-1 sm:gap-1.5 border line-clamp-1 transition-all hover:text-white dark:hover:text-slate-900 hover:shadow-lg active:scale-95 group",
                                                     isCritical
                                                         ? "bg-rose-500/10 text-rose-600 border-rose-200 dark:bg-rose-400/10 dark:text-rose-400 dark:border-rose-900/30 hover:bg-rose-500 hover:shadow-rose-500/20"
                                                         : "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-400 dark:border-emerald-900/30 hover:bg-emerald-500 hover:shadow-emerald-500/20"
                                                 )}
                                                 title={`${isCritical ? '⚠️ CRÍTICO: ' : ''}Ver reserva en ${r.alojamiento_nombre}`}
                                             >
-                                                <Hotel className={cn("w-3 h-3 shrink-0 group-hover:scale-110 transition-transform", isCritical && "animate-pulse")} />
-                                                <span className={cn(isCritical && "text-rose-700 dark:text-rose-300 font-black")}>
+                                                <Hotel className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0 group-hover:scale-110 transition-transform", isCritical && "animate-pulse")} />
+                                                <span className={cn("hidden sm:inline", isCritical && "text-rose-700 dark:text-rose-300 font-black")}>
                                                     {r.alojamiento_nombre}
                                                 </span>
                                             </Link>

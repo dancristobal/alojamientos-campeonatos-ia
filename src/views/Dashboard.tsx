@@ -157,17 +157,17 @@ const Dashboard: React.FC = () => {
                                     <div
                                         key={r.id}
                                         className={cn(
-                                            "glass p-6 rounded-3xl flex items-center gap-6 border-l-4 transition-all group",
+                                            "glass p-4 sm:p-6 rounded-3xl flex items-center gap-3 sm:gap-6 border-l-4 transition-all group",
                                             isCritical
                                                 ? "border-rose-500 bg-rose-50/5 hover:bg-rose-50/10"
                                                 : "border-amber-400 hover:bg-amber-50/10"
                                         )}
                                     >
                                         <div className={cn(
-                                            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm",
+                                            "w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm shrink-0",
                                             isCritical ? "bg-rose-100 dark:bg-rose-900/20" : "bg-white dark:bg-slate-800"
                                         )}>
-                                            <Hotel className={cn("w-6 h-6", isCritical ? "text-rose-600" : "text-slate-400")} />
+                                            <Hotel className={cn("w-5 h-5 sm:w-6 sm:h-6", isCritical ? "text-rose-600" : "text-slate-400")} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className={cn(
@@ -187,7 +187,7 @@ const Dashboard: React.FC = () => {
                                             </p>
                                             <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
                                         </div>
-                                        <Link to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                                        <Link to={`/campeonatos/${r.campeonato_id}?reservaId=${r.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg shrink-0">
                                             <ChevronRight className="w-5 h-5" />
                                         </Link>
                                     </div>
@@ -215,19 +215,19 @@ const Dashboard: React.FC = () => {
                             </div>
                         ) : (
                             metrics.proximasEntradas.map(r => (
-                                <div key={r.id} className="glass p-6 rounded-3xl flex items-center gap-6 border-l-4 border-emerald-400 group hover:bg-emerald-50/10 transition-colors">
-                                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                                        <Calendar className="w-6 h-6 text-slate-400" />
+                                <div key={r.id} className="glass p-4 sm:p-6 rounded-3xl flex items-center gap-3 sm:gap-6 border-l-4 border-emerald-400 group hover:bg-emerald-50/10 transition-colors">
+                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0">
+                                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold truncate">{r.alojamiento_nombre}</h4>
-                                        <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                        <h4 className="font-bold truncate text-sm sm:text-base">{r.alojamiento_nombre}</h4>
+                                        <p className="text-xs sm:text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className="text-xs font-black text-emerald-600 uppercase">¡{differenceInDays(parseISO(r.fecha_entrada), new Date())} días!</p>
+                                        <p className="text-[10px] sm:text-xs font-black text-emerald-600 uppercase">¡{differenceInDays(parseISO(r.fecha_entrada), new Date())} d!</p>
                                         <p className="text-sm font-bold">{format(parseISO(r.fecha_entrada), "d MMM")}</p>
                                     </div>
-                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg">
+                                    <Link to={`/campeonatos/${r.campeonato_id}`} className="p-2 hover:bg-slate-100 rounded-lg shrink-0">
                                         <ChevronRight className="w-5 h-5" />
                                     </Link>
                                 </div>

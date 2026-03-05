@@ -270,8 +270,8 @@ const CampeonatoDetalle: React.FC = () => {
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight">{campeonato.nombre}</h1>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{campeonato.nombre}</h1>
                         <Badge variant={campeonato.estado === 'abierto' ? 'success' : 'outline'}>
                             {campeonato.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                         </Badge>
@@ -282,7 +282,7 @@ const CampeonatoDetalle: React.FC = () => {
                             </Badge>
                         )}
                     </div>
-                    <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                    <p className="text-muted-foreground flex items-center gap-2 mt-1 flex-wrap text-sm sm:text-base">
                         <MapPin className="w-4 h-4" /> {campeonato.localidad} • {format(new Date(campeonato.fecha), "PPP", { locale: es })}
                     </p>
                 </div>
@@ -355,10 +355,10 @@ const CampeonatoDetalle: React.FC = () => {
                     <div className="grid gap-6">
                         {reservas.map(r => (
                             <div key={r.id} className="glass rounded-[2rem] p-8 hover:shadow-xl transition-all border-l-4 border-l-primary group">
-                                <div className="flex flex-col xl:flex-row gap-8">
+                                <div className="flex flex-col lg:flex-row gap-8">
                                     {/* Hotel Info */}
                                     <div className="flex-1 space-y-4">
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
 
                                             <div>
                                                 <h4 className={cn(
@@ -374,7 +374,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                 )}>
                                                     {r.alojamiento_nombre || "Hotel sin nombre"}
                                                 </h4>
-                                                <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
+                                                <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
                                                     <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
                                                         {r.estado.toUpperCase()}
                                                     </span>
@@ -385,7 +385,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
+                                            <div className="text-left sm:text-right">
                                                 <p className="text-2xl font-black text-primary">
                                                     {Number(r.precio_total_final).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                                 </p>
@@ -461,7 +461,7 @@ const CampeonatoDetalle: React.FC = () => {
                                     </div>
 
                                     {/* Quick Actions */}
-                                    <div className="flex xl:flex-col justify-end gap-3 border-t xl:border-t-0 xl:border-l dark:border-slate-800 pt-6 xl:pt-0 xl:pl-8">
+                                    <div className="flex lg:flex-col justify-end gap-3 border-t lg:border-t-0 lg:border-l dark:border-slate-800 pt-6 lg:pt-0 lg:pl-8">
                                         <div className="flex gap-2">
                                             <Button
                                                 variant="ghost"
@@ -516,7 +516,7 @@ const CampeonatoDetalle: React.FC = () => {
                             value={formData.alojamiento_nombre}
                             onChange={e => setFormData({ ...formData, alojamiento_nombre: e.target.value })}
                         />
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Input
                                 label="Fecha Entrada"
                                 type="date"
@@ -533,8 +533,8 @@ const CampeonatoDetalle: React.FC = () => {
                                 error={formErrors.fecha_salida}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex items-center gap-3 pt-8 px-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3 pt-4 sm:pt-8 px-2">
                                 <input
                                     type="checkbox"
                                     id="reembolsable"
@@ -590,7 +590,7 @@ const CampeonatoDetalle: React.FC = () => {
                                         </button>
                                     )}
                                 </div>
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <Input
                                         label="Cant."
                                         type="number"
