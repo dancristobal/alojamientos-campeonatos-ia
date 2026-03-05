@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
+import * as ics from 'ics';
 import { useCampeonatos } from '../hooks/useCampeonatos';
 import { useReservas } from '../hooks/useReservas';
 import { useConfig } from '../hooks/useConfig';
@@ -21,8 +22,10 @@ import {
     MapPin,
     RefreshCw,
     AlertCircle,
-    Clock
+    Clock,
+    Download
 } from 'lucide-react';
+
 import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
@@ -86,7 +89,7 @@ const CampeonatoDetalle: React.FC = () => {
     };
 
     const handleRemoveRoom = (index: number) => {
-        setHabitaciones(habitaciones.filter((_, i) => i !== index));
+        setHabitaciones(habitaciones.filter((_, i: number) => i !== index));
     };
 
     const handleUpdateRoom = (index: number, field: keyof HabitacionReserva, value: any) => {
@@ -95,9 +98,37 @@ const CampeonatoDetalle: React.FC = () => {
         setHabitaciones(next);
     };
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    const validateDates = () => {
+        const errors: Record<string, string> = {};
+        const entrada = parseISO(formData.fecha_entrada);
+        const salida = parseISO(formData.fecha_salida);
+        const cancelacion = formData.fecha_cancelacion ? parseISO(formData.fecha_cancelacion) : null;
+
+        if (formData.fecha_entrada && formData.fecha_salida) {
+            if (!isAfter(salida, entrada)) {
+                errors.fecha_salida = "La fecha de salida debe ser posterior a la de entrada.";
+            }
+        }
+
+        if (formData.es_reembolsable && formData.fecha_cancelacion && formData.fecha_entrada) {
+            if (!isBefore(cancelacion!, entrada)) {
+                errors.fecha_cancelacion = "La fecha límite de cancelación debe ser anterior al día de entrada.";
+            }
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id) return;
+
+        if (!validateDates()) {
+            return;
+        }
 
         try {
             setIsSaving(true);
@@ -108,7 +139,7 @@ const CampeonatoDetalle: React.FC = () => {
                     estado: 'activa',
                     id: editingReservaId || undefined
                 },
-                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion }) => ({
+                habitaciones.map(({ tipo, numero_habitaciones, precio_por_habitacion }: Omit<HabitacionReserva, 'id' | 'reserva_id'>) => ({
                     tipo,
                     numero_habitaciones,
                     precio_por_habitacion
@@ -120,6 +151,37 @@ const CampeonatoDetalle: React.FC = () => {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleExportToCalendar = (reserva: any) => {
+        const startRaw = new Date(reserva.fecha_entrada);
+        const endRaw = new Date(reserva.fecha_salida);
+
+        const event: ics.EventAttributes = {
+            start: [startRaw.getFullYear(), startRaw.getMonth() + 1, startRaw.getDate()],
+            end: [endRaw.getFullYear(), endRaw.getMonth() + 1, endRaw.getDate()],
+            title: `Alojamiento: ${reserva.alojamiento_nombre}`,
+            description: `Reserva para el campeonato: ${campeonato?.nombre}\n${reserva.observaciones || ''}\nWeb: ${reserva.enlace_web || 'N/A'}`,
+            location: campeonato?.localidad || '',
+            categories: ['Viaje', 'Tiro con Arco'],
+            status: 'CONFIRMED',
+            busyStatus: 'BUSY'
+        };
+
+        ics.createEvent(event, (error, value) => {
+            if (error) {
+                console.error(error);
+                return;
+            }
+            const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `reserva_${reserva.alojamiento_nombre.replace(/\s+/g, '_').toLowerCase()}.ics`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     };
 
     const handleEditReserva = (reserva: any) => {
@@ -145,8 +207,8 @@ const CampeonatoDetalle: React.FC = () => {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
-        setEditingReservaId(null); // Reset editing state
-        // Reset form data
+        setEditingReservaId(null);
+        setFormErrors({});
         setFormData({
             alojamiento_nombre: '',
             fecha_entrada: '',
@@ -387,6 +449,14 @@ const CampeonatoDetalle: React.FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                title="Exportar a Calendario"
+                                                onClick={() => handleExportToCalendar(r)}
+                                            >
+                                                <Download className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 disabled={campeonato.estado === 'cerrado'}
                                                 onClick={() => handleEditReserva(r)} // Call handleEditReserva
                                             >
@@ -443,6 +513,7 @@ const CampeonatoDetalle: React.FC = () => {
                                 required
                                 value={formData.fecha_salida}
                                 onChange={e => setFormData({ ...formData, fecha_salida: e.target.value })}
+                                error={formErrors.fecha_salida}
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -463,6 +534,7 @@ const CampeonatoDetalle: React.FC = () => {
                                     required
                                     value={formData.fecha_cancelacion}
                                     onChange={e => setFormData({ ...formData, fecha_cancelacion: e.target.value })}
+                                    error={formErrors.fecha_cancelacion}
                                 />
                             )}
                         </div>
@@ -491,7 +563,7 @@ const CampeonatoDetalle: React.FC = () => {
                             </Button>
                         </div>
 
-                        {habitaciones.map((room, idx) => (
+                        {habitaciones.map((room: Omit<HabitacionReserva, 'id' | 'reserva_id'>, idx: number) => (
                             <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-4 animate-in slide-in-from-top-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-black uppercase text-slate-400">Tipo #{idx + 1}</span>
