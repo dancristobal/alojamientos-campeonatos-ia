@@ -14,18 +14,23 @@ serve(async (req) => {
             SUPABASE_SERVICE_ROLE_KEY!
         )
 
+
         // 1. Fetch active reservations with cancellation date in the next 3 days
         const now = new Date()
+        now.setHours(0, 0, 0, 0) // Start of today
+
         const threeDaysFromNow = new Date()
         threeDaysFromNow.setDate(now.getDate() + 3)
+        threeDaysFromNow.setHours(23, 59, 59, 999) // End of day 3
 
         const { data: reservas, error } = await supabase
             .from('reservas')
             .select('*, campeonato:campeonatos(nombre)')
             .eq('estado', 'activa')
             .not('fecha_cancelacion', 'is', null)
-            .gte('fecha_cancelacion', now.toISOString())
-            .lte('fecha_cancelacion', threeDaysFromNow.toISOString())
+            .gte('fecha_cancelacion', now.toISOString().split('T')[0])
+            .lte('fecha_cancelacion', threeDaysFromNow.toISOString().split('T')[0])
+
 
         if (error) throw error
 
