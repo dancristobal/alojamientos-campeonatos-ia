@@ -20,7 +20,9 @@ import {
     Unlock,
     AlertCircle,
     Trash2,
-    Edit3
+    Edit3,
+    Filter,
+    Search
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -40,6 +42,8 @@ const Campeonatos: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [statusFilter, setStatusFilter] = useState<'todos' | 'abierto' | 'cerrado'>('todos');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchReservas = async () => {
@@ -58,6 +62,24 @@ const Campeonatos: React.FC = () => {
         };
         fetchReservas();
     }, []);
+
+    const filteredCampeonatos = useMemo(() => {
+        let filtered = campeonatos;
+        
+        if (statusFilter !== 'todos') {
+            filtered = filtered.filter(c => c.estado === statusFilter);
+        }
+
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(c => 
+                c.nombre.toLowerCase().includes(lowerSearch) || 
+                c.localidad.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        return filtered;
+    }, [campeonatos, statusFilter, searchTerm]);
 
     const campeonatosConAlertas = useMemo(() => {
         const now = new Date();
@@ -178,28 +200,61 @@ const Campeonatos: React.FC = () => {
                 </Button>
             </div>
 
+            {/* Filters & Search */}
+            <div className="flex flex-col md:flex-row gap-4 glass p-4 rounded-[1.5rem] border dark:border-slate-800 shadow-sm">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input
+                        placeholder="Buscar por nombre o localidad..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 mb-0"
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Filter className="w-5 h-5 text-slate-400" />
+                    <select
+                        className="w-full md:w-48 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 font-medium outline-none transition-all focus:ring-2 focus:ring-primary/20"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                    >
+                        <option value="todos">Todos los estados</option>
+                        <option value="abierto">Abiertos</option>
+                        <option value="cerrado">Cerrados</option>
+                    </select>
+                </div>
+            </div>
+
             {/* Content */}
             {(isLoading || loadingRes || loadingCfg) ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4 glass rounded-3xl">
+                <div className="flex flex-col items-center justify-center py-24 gap-4 glass rounded-[2.5rem]">
                     <Loader2 className="w-12 h-12 animate-spin text-primary" />
                     <p className="text-muted-foreground font-semibold animate-pulse">Cargando campeonatos y alertas...</p>
                 </div>
-            ) : campeonatos.length === 0 ? (
+            ) : filteredCampeonatos.length === 0 ? (
                 <div className="glass p-16 text-center rounded-[2.5rem] border-dashed border-2 flex flex-col items-center">
                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
                         <Trophy className="w-10 h-10 text-slate-300" />
                     </div>
-                    <h3 className="text-2xl font-bold">Sin actividad todavía</h3>
+                    <h3 className="text-2xl font-bold">Sin resultados</h3>
                     <p className="text-muted-foreground mt-2 max-w-sm mx-auto text-lg leading-relaxed">
-                        Es el momento de añadir tu primer campeonato para empezar a organizar las reservas de hotel.
+                        {statusFilter === 'todos' && !searchTerm
+                            ? "Es el momento de añadir tu primer campeonato para empezar a organizar las reservas de hotel."
+                            : "No hay campeonatos que coincidan con los criterios de búsqueda o filtrado."}
                     </p>
-                    <Button variant="outline" onClick={() => setIsModalOpen(true)} className="mt-8">
-                        Crear ahora
-                    </Button>
+                    {statusFilter === 'todos' && !searchTerm ? (
+                        <Button variant="outline" onClick={() => setIsModalOpen(true)} className="mt-8">
+                            Crear ahora
+                        </Button>
+                    ) : (
+                        <Button variant="ghost" onClick={() => { setStatusFilter('todos'); setSearchTerm(''); }} className="mt-8 text-primary">
+                            Limpiar búsqueda y filtros
+                        </Button>
+                    )}
                 </div>
             ) : (
                 <div className="grid gap-6">
-                    {campeonatos.map((c) => (
+                    {filteredCampeonatos.map((c) => (
                         <div
                             key={c.id}
                             className={cn(

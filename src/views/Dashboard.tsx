@@ -45,7 +45,25 @@ const Dashboard: React.FC = () => {
         const fetchAll = async () => {
             setLoadingRes(true);
             const { data } = await supabase.from('reservas').select('*, campeonato:campeonatos(*)');
-            setAllReservas(data || []);
+            
+            const nowStr = new Date().toISOString().split('T')[0];
+            const reservations = (data || []) as (Reserva & { id: string, fecha_salida: string, estado: string })[];
+            const idsToUpdate: string[] = [];
+
+            reservations.forEach(r => {
+                if (r.estado === 'activa' && r.fecha_salida < nowStr) {
+                    r.estado = 'finalizada';
+                    idsToUpdate.push(r.id);
+                }
+            });
+
+            if (idsToUpdate.length > 0) {
+                supabase.from('reservas').update({ estado: 'finalizada' }).in('id', idsToUpdate).then(({ error }) => {
+                    if (error) console.error('Dashboard auto-finalize error:', error);
+                });
+            }
+
+            setAllReservas(reservations);
 
             // Fetch pending payments
             const { data: pagos } = await supabase
@@ -65,10 +83,17 @@ const Dashboard: React.FC = () => {
 
     const metrics = useMemo(() => {
         const now = new Date();
-        const activeReembolsables = allReservas.filter(r => r.estado === 'activa' && r.es_reembolsable && r.fecha_cancelacion);
+        const nowStr = now.toISOString().split('T')[0];
+
+        // Filter out reservations that should be 'finalizada' based on checkout date
+        const realActiveReservas = allReservas.filter(r =>
+            r.estado === 'activa' && r.fecha_salida >= nowStr
+        );
+
+        const activeReembolsables = realActiveReservas.filter(r => r.es_reembolsable && r.fecha_cancelacion);
 
         return {
-            totalActivas: allReservas.filter(r => r.estado === 'activa').length,
+            totalActivas: realActiveReservas.length,
             proximasCancelaciones: activeReembolsables.filter(r => {
                 const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
                 return daysRemaining >= 0 && daysRemaining <= config.umbrales.proxima;
@@ -77,8 +102,7 @@ const Dashboard: React.FC = () => {
                 const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
                 return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica;
             }),
-            proximasEntradas: allReservas.filter(r =>
-                r.estado === 'activa' &&
+            proximasEntradas: realActiveReservas.filter(r =>
                 isAfter(parseISO(r.fecha_entrada), now) &&
                 isBefore(parseISO(r.fecha_entrada), addDays(now, 7))
             ).sort((a, b) => parseISO(a.fecha_entrada).getTime() - parseISO(b.fecha_entrada).getTime()),

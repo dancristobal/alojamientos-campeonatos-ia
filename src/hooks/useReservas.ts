@@ -27,9 +27,37 @@ export function useReservas(campeonatoId?: string) {
             }
 
             const { data, error } = await query;
-
             if (error) throw error;
-            setReservas(data || []);
+
+            // Computed synchronization: check for reservations that should be 'finalizada'
+            // We use local time for the "today" boundary to match user expectations
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const nowStr = now.toISOString().split('T')[0];
+
+            const reservations = data as (Reserva & { id: string, fecha_salida: string, estado: string })[];
+            const idsToUpdate: string[] = [];
+
+            reservations.forEach(r => {
+                // If chek-out date is strictly before today and it was 'activa', update it
+                if (r.estado === 'activa' && r.fecha_salida < nowStr) {
+                    r.estado = 'finalizada';
+                    idsToUpdate.push(r.id);
+                }
+            });
+
+            if (idsToUpdate.length > 0) {
+                // background update to DB
+                supabase
+                    .from('reservas')
+                    .update({ estado: 'finalizada' })
+                    .in('id', idsToUpdate)
+                    .then(({ error }) => {
+                        if (error) console.error('Error auto-finalizing reservations:', error);
+                    });
+            }
+
+            setReservas(reservations || []);
         } catch (err: any) {
             setError(err.message);
         } finally {
