@@ -131,8 +131,8 @@ const Campeonatos: React.FC = () => {
 
         try {
             await deleteCampeonato(id);
-        } catch (err) {
-            alert('Error al eliminar el campeonato');
+        } catch (err: any) {
+            alert(err.message || 'Error al tratar de eliminar el campeonato');
         }
     };
 
@@ -256,7 +256,7 @@ const Campeonatos: React.FC = () => {
                                     <Button
                                         variant="secondary"
                                         size="icon"
-                                        onClick={() => updateCampeonatoStatus(c.id, c.estado === 'abierto' ? 'cerrado' : 'abierto')}
+                                        onClick={async () => { try { await updateCampeonatoStatus(c.id, c.estado === 'abierto' ? 'cerrado' : 'abierto'); } catch (err: any) { alert(err.message); } }}
                                         title={c.estado === 'abierto' ? 'Cerrar campeonato' : 'Abrir campeonato'}
                                     >
                                         {c.estado === 'abierto' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}

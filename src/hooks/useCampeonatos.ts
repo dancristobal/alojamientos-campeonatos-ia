@@ -56,8 +56,26 @@ export function useCampeonatos() {
         }
     };
 
+    const checkPagosPendientes = async (campeonatoId: string) => {
+        const { data: resData } = await supabase.from('reservas').select('id').eq('campeonato_id', campeonatoId);
+        if (resData && resData.length > 0) {
+            const resIds = resData.map(r => r.id);
+            const { data: pagos } = await supabase
+                .from('pagos_reserva')
+                .select('id')
+                .in('reserva_id', resIds)
+                .eq('ha_pagado', false);
+            if (pagos && pagos.length > 0) {
+                throw new Error('Hay arqueros pendientes de pago en las reservas de este campeonato.');
+            }
+        }
+    };
+
     const updateCampeonatoStatus = async (id: string, estado: EstadoCampeonato) => {
         try {
+            if (estado === 'cerrado') {
+                await checkPagosPendientes(id);
+            }
             const { error } = await supabase
                 .from('campeonatos')
                 .update({ estado })
@@ -73,6 +91,7 @@ export function useCampeonatos() {
 
     const deleteCampeonato = async (id: string) => {
         try {
+            await checkPagosPendientes(id);
             // 1. Get all reservations to delete their rooms
             const { data: resData } = await supabase
                 .from('reservas')
