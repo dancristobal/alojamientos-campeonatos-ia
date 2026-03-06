@@ -12,14 +12,21 @@ export function useReservas(campeonatoId?: string) {
         if (!campeonatoId) return;
         try {
             setIsLoading(true);
-            const { data, error } = await supabase
+
+            let query = supabase
                 .from('reservas')
                 .select(`
-          *,
-          habitaciones:habitaciones_reserva(*)
-        `)
-                .eq('campeonato_id', campeonatoId)
+                  *,
+                  habitaciones:habitaciones_reserva(*),
+                  campeonatos (nombre)
+                `)
                 .order('fecha_entrada', { ascending: true });
+
+            if (campeonatoId !== 'all') {
+                query = query.eq('campeonato_id', campeonatoId);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setReservas(data || []);

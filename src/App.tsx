@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Dashboard from './views/Dashboard';
 import Campeonatos from './views/Campeonatos';
 import CampeonatoDetalle from './views/CampeonatoDetalle';
+import Reservas from './views/Reservas';
 import Calendario from './views/Calendario';
 import Settings from './views/Settings';
 
@@ -15,6 +16,7 @@ const App: React.FC = () => {
           <Route index element={<Dashboard />} />
           <Route path="campeonatos" element={<Campeonatos />} />
           <Route path="campeonatos/:id" element={<CampeonatoDetalle />} />
+          <Route path="reservas" element={<Reservas />} />
           <Route path="calendario" element={<Calendario />} />
           <Route path="settings" element={<Settings />} />
           {/* Fallback */}

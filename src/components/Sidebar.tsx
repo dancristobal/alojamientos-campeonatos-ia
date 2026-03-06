@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     Trophy,
+    Hotel,
     Calendar,
     Settings,
     X
@@ -25,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/' },
         { title: 'Campeonatos', icon: Trophy, href: '/campeonatos' },
+        { title: 'Reservas', icon: Hotel, href: '/reservas' },
         { title: 'Calendario', icon: Calendar, href: '/calendario' },
         { title: 'Configuración', icon: Settings, href: '/settings' },
     ];
