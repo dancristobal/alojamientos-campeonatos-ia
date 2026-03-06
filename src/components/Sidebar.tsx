@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     Trophy,
     Hotel,
+    Users,
     Calendar,
     Settings,
     X
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { title: 'Dashboard', icon: LayoutDashboard, href: '/' },
         { title: 'Campeonatos', icon: Trophy, href: '/campeonatos' },
         { title: 'Reservas', icon: Hotel, href: '/reservas' },
+        { title: 'Arqueros', icon: Users, href: '/arqueros' },
         { title: 'Calendario', icon: Calendar, href: '/calendario' },
         { title: 'Configuración', icon: Settings, href: '/settings' },
     ];

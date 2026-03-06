@@ -10,7 +10,9 @@ import {
     ChevronRight,
     TrendingUp,
     History,
-    Info
+    Info,
+    Wallet,
+    Users
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { format, isAfter, isBefore, addDays, parseISO, differenceInDays } from 'date-fns';
@@ -32,6 +34,7 @@ const Dashboard: React.FC = () => {
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     const [allReservas, setAllReservas] = React.useState<Reserva[]>([]);
     const [loadingRes, setLoadingRes] = React.useState(true);
+    const [pendientePagos, setPendientePagos] = React.useState(0);
 
     // Inject config into window for shared components if needed
     React.useEffect(() => {
@@ -45,6 +48,15 @@ const Dashboard: React.FC = () => {
             setLoadingRes(true);
             const { data } = await supabase.from('reservas').select('*, campeonato:campeonatos(*)');
             setAllReservas(data || []);
+
+            // Fetch pending payments
+            const { data: pagos } = await supabase
+                .from('pagos_reserva')
+                .select('importe, ha_pagado')
+                .eq('ha_pagado', false);
+            const total = (pagos || []).reduce((sum, p) => sum + Number(p.importe), 0);
+            setPendientePagos(total);
+
             setLoadingRes(false);
         };
         fetchAll();
@@ -108,10 +120,10 @@ const Dashboard: React.FC = () => {
             {/* Hero Metrics */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                    { label: 'Campeonatos Activos', value: activeCampeonatos.length, icon: Trophy, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-                    { label: 'Reservas Totales', value: metrics.totalActivas, icon: Hotel, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-                    { label: 'Alertas Críticas', value: metrics.criticas.length, icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
-                    { label: 'Próximas Cancelaciones', value: metrics.proximasCancelaciones.length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+                    { label: 'Campeonatos Activos', value: activeCampeonatos.length, icon: Trophy, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', isAmount: false },
+                    { label: 'Reservas Activas', value: metrics.totalActivas, icon: Hotel, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', isAmount: false },
+                    { label: 'Alertas Críticas', value: metrics.criticas.length, icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', isAmount: false },
+                    { label: 'Pendiente de Cobro', value: pendientePagos, icon: Wallet, color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-900/20', isAmount: true },
                 ].map((m, i) => (
                     <div key={i} className="glass p-8 rounded-[2.5rem] relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
                         <m.icon className={cn("w-12 h-12 absolute -right-2 -bottom-2 opacity-5 scale-150 group-hover:scale-[2] transition-transform duration-700", m.color)} />
@@ -119,7 +131,9 @@ const Dashboard: React.FC = () => {
                             <m.icon className={cn("w-6 h-6", m.color)} />
                         </div>
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">{m.label}</p>
-                        <p className="text-4xl font-black mt-1 tracking-tighter">{m.value}</p>
+                        <p className="text-4xl font-black mt-1 tracking-tighter">
+                            {m.isAmount ? `${m.value.toFixed(2)}€` : m.value}
+                        </p>
                     </div>
                 ))}
             </div>

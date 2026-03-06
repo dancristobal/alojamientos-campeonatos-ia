@@ -8,6 +8,7 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import { Input } from '../components/Input';
+import RepartoGastos from '../components/RepartoGastos';
 import {
     ArrowLeft,
     Plus,
@@ -494,6 +495,10 @@ const CampeonatoDetalle: React.FC = () => {
                                             <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs italic text-slate-500 whitespace-pre-wrap">
                                                 "{r.observaciones}"
                                             </div>
+                                        )}
+
+                                        {r.estado === 'activa' && (
+                                            <RepartoGastos reservaId={r.id} precioTotal={Number(r.precio_total_final)} />
                                         )}
                                     </div>
 

@@ -1,6 +1,26 @@
 export type EstadoCampeonato = 'abierto' | 'cerrado';
 export type EstadoReserva = 'activa' | 'cancelada' | 'vencida' | 'finalizada';
 
+export interface Arquero {
+    id: string;
+    nombre: string;
+    email?: string;
+    numero_licencia?: string;
+    created_at: string;
+}
+
+export interface PagoReserva {
+    id: string;
+    reserva_id: string;
+    arquero_id: string;
+    importe: number;
+    ha_pagado: boolean;
+    fecha_pago?: string | null;
+    notas?: string;
+    // joined
+    arquero?: Arquero;
+}
+
 export interface Campeonato {
     id: string;
     nombre: string;
