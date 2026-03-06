@@ -177,7 +177,7 @@ const Dashboard: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <h4 className={cn(
                                                 "font-bold truncate transition-colors",
-                                                isCritical ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
+                                                r.estado === 'cancelada' || isCritical ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
                                             )}>
                                                 {r.alojamiento_nombre}
                                             </h4>
@@ -228,7 +228,12 @@ const Dashboard: React.FC = () => {
                                         <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold truncate text-sm sm:text-base">{r.alojamiento_nombre}</h4>
+                                        <h4 className={cn(
+                                            "font-bold truncate text-sm sm:text-base transition-colors",
+                                            r.estado === 'cancelada' ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
+                                        )}>
+                                            {r.alojamiento_nombre}
+                                        </h4>
                                         <p className="text-xs sm:text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
                                     </div>
                                     <div className="text-right shrink-0">

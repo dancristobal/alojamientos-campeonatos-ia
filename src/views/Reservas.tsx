@@ -16,7 +16,13 @@ import {
     Loader2,
     Clock
 } from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import type { EstadoReserva, Reserva } from '../types';
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 const STATUS_COLORS: Record<EstadoReserva, { badge: 'success' | 'warning' | 'error' | 'default', label: string }> = {
     activa: { badge: 'success', label: 'Activa' },
@@ -32,7 +38,7 @@ const Reservas: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState<EstadoReserva | 'todas'>('todas');
 
     const filteredReservas = useMemo(() => {
-        let filtered = reservas as (Reserva & { campeonatos: { nombre: string } })[];
+        let filtered = reservas as (Reserva & { campeonatos: { nombre: string, estado: string } })[];
 
         if (statusFilter !== 'todas') {
             filtered = filtered.filter(r => r.estado === statusFilter);
@@ -122,7 +128,10 @@ const Reservas: React.FC = () => {
 
                             <div className="flex-1 space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                                    <h3 className={cn(
+                                        "font-bold text-lg transition-colors",
+                                        r.estado === 'cancelada' ? "text-rose-600 dark:text-rose-400" : "text-slate-800 dark:text-slate-100"
+                                    )}>
                                         {r.alojamiento_nombre || 'Sin alojamiento asignado'}
                                     </h3>
                                     <Badge variant={STATUS_COLORS[r.estado]?.badge || 'default'}>
@@ -156,9 +165,15 @@ const Reservas: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap">
-                                    <div className="flex items-center gap-1.5 font-medium text-primary">
+                                    <div className={cn(
+                                        "flex items-center gap-1.5 font-medium",
+                                        r.campeonatos?.estado === 'cerrado' ? "text-rose-600 dark:text-rose-400" : "text-primary"
+                                    )}>
                                         <MapPin className="w-4 h-4" />
                                         {r.campeonatos?.nombre}
+                                        {r.campeonatos?.estado === 'cerrado' && (
+                                            <Badge variant="error" className="text-[10px] py-0 px-1.5 ml-1">Cerrado</Badge>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Calendar className="w-4 h-4" />

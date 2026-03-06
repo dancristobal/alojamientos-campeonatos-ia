@@ -295,7 +295,7 @@ const CampeonatoDetalle: React.FC = () => {
                 <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{campeonato.nombre}</h1>
-                        <Badge variant={campeonato.estado === 'abierto' ? 'success' : 'outline'}>
+                        <Badge variant={campeonato.estado === 'abierto' ? 'success' : 'error'}>
                             {campeonato.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                         </Badge>
                         {hasCriticalCancellation && (
@@ -399,14 +399,15 @@ const CampeonatoDetalle: React.FC = () => {
                                             <div>
                                                 <h4 className={cn(
                                                     "text-xl font-black transition-colors",
-
-                                                    (() => {
-                                                        if (!r.fecha_cancelacion) return "text-slate-900 dark:text-slate-100";
-                                                        const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
-                                                        return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica && r.estado === 'activa' && r.es_reembolsable
-                                                            ? "text-rose-600 dark:text-rose-400"
-                                                            : "text-slate-900 dark:text-slate-100";
-                                                    })()
+                                                    r.estado === 'cancelada'
+                                                        ? "text-rose-600 dark:text-rose-400"
+                                                        : (() => {
+                                                            if (!r.fecha_cancelacion) return "text-slate-900 dark:text-slate-100";
+                                                            const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+                                                            return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica && r.estado === 'activa' && r.es_reembolsable
+                                                                ? "text-rose-600 dark:text-rose-400"
+                                                                : "text-slate-900 dark:text-slate-100";
+                                                        })()
                                                 )}>
                                                     {r.alojamiento_nombre || "Hotel sin nombre"}
                                                 </h4>

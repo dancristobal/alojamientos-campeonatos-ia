@@ -219,7 +219,12 @@ const Campeonatos: React.FC = () => {
 
                                 <div className="flex-1 min-w-0 space-y-2">
                                     <div className="flex items-center gap-4 flex-wrap">
-                                        <h3 className="text-2xl font-bold tracking-tight">{c.nombre}</h3>
+                                        <h3 className={cn(
+                                            "text-2xl font-bold tracking-tight",
+                                            c.estado === 'cerrado' && "text-rose-600 dark:text-rose-400"
+                                        )}>
+                                            {c.nombre}
+                                        </h3>
                                         <div className="flex gap-2">
                                             <Badge variant={c.estado === 'abierto' ? 'success' : 'error'} className="text-sm px-4">
                                                 {c.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
@@ -272,17 +277,15 @@ const Campeonatos: React.FC = () => {
                                     >
                                         {c.estado === 'abierto' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
                                     </Button>
-                                    {c.estado === 'abierto' && (
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            onClick={() => handleDelete(c.id)}
-                                            title="Eliminar campeonato"
-                                            className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </Button>
-                                    )}
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        onClick={() => handleDelete(c.id)}
+                                        title="Eliminar campeonato"
+                                        className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </Button>
                                     <Button
                                         variant="primary"
                                         rightIcon={ChevronRight}
