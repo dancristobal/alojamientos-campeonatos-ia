@@ -388,7 +388,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                     (() => {
                                                         if (!r.fecha_cancelacion) return "text-slate-900 dark:text-slate-100";
                                                         const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
-                                                        return daysRemaining <= config.umbrales.critica && r.estado === 'activa' && r.es_reembolsable
+                                                        return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica && r.estado === 'activa' && r.es_reembolsable
                                                             ? "text-rose-600 dark:text-rose-400"
                                                             : "text-slate-900 dark:text-slate-100";
                                                     })()
@@ -453,6 +453,10 @@ const CampeonatoDetalle: React.FC = () => {
                                                     </div>
                                                     {(() => {
                                                         const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+
+                                                        // Ignore if cancellation date has already passed
+                                                        if (daysRemaining < 0) return null;
+
                                                         if (daysRemaining <= config.umbrales.critica) {
                                                             return (
                                                                 <Badge variant="error" className="animate-pulse shadow-lg shadow-rose-500/20 flex items-center gap-1.5 px-3">

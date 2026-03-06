@@ -131,6 +131,10 @@ const Reservas: React.FC = () => {
                                     {(() => {
                                         if (!r.fecha_cancelacion || r.estado !== 'activa' || !r.es_reembolsable) return null;
                                         const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+
+                                        // Ignore if cancellation date has already passed
+                                        if (daysRemaining < 0) return null;
+
                                         if (daysRemaining <= config.umbrales.critica) {
                                             return (
                                                 <Badge variant="error" className="animate-pulse shadow-rose-500/20 flex items-center gap-1">

@@ -55,25 +55,18 @@ const Dashboard: React.FC = () => {
 
     const metrics = useMemo(() => {
         const now = new Date();
-        const next7Days = addDays(now, config.umbrales.proxima);
-        const next3Days = addDays(now, config.umbrales.critica);
+        const activeReembolsables = allReservas.filter(r => r.estado === 'activa' && r.es_reembolsable && r.fecha_cancelacion);
 
         return {
             totalActivas: allReservas.filter(r => r.estado === 'activa').length,
-            proximasCancelaciones: allReservas.filter(r =>
-                r.estado === 'activa' &&
-                r.es_reembolsable &&
-                r.fecha_cancelacion &&
-                isAfter(parseISO(r.fecha_cancelacion), now) &&
-                isBefore(parseISO(r.fecha_cancelacion), next7Days)
-            ).sort((a, b) => parseISO(a.fecha_cancelacion!).getTime() - parseISO(b.fecha_cancelacion!).getTime()),
-            criticas: allReservas.filter(r =>
-                r.estado === 'activa' &&
-                r.es_reembolsable &&
-                r.fecha_cancelacion &&
-                isBefore(parseISO(r.fecha_cancelacion), next3Days) &&
-                isAfter(parseISO(r.fecha_cancelacion), now)
-            ),
+            proximasCancelaciones: activeReembolsables.filter(r => {
+                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
+                return daysRemaining >= 0 && daysRemaining <= config.umbrales.proxima;
+            }).sort((a, b) => parseISO(a.fecha_cancelacion!).getTime() - parseISO(b.fecha_cancelacion!).getTime()),
+            criticas: activeReembolsables.filter(r => {
+                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
+                return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica;
+            }),
             proximasEntradas: allReservas.filter(r =>
                 r.estado === 'activa' &&
                 isAfter(parseISO(r.fecha_entrada), now) &&
