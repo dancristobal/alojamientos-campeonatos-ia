@@ -99,8 +99,22 @@ export function useReservas(campeonatoId?: string) {
         }
     };
 
+    const checkPagosPendientesReserva = async (reservaId: string) => {
+        const { data: pagos } = await supabase
+            .from('pagos_reserva')
+            .select('id')
+            .eq('reserva_id', reservaId)
+            .eq('ha_pagado', false);
+        if (pagos && pagos.length > 0) {
+            throw new Error('No se puede realizar esta acción: hay arqueros pendientes de pago en esta reserva.');
+        }
+    };
+
     const updateReservaStatus = async (id: string, estado: EstadoReserva) => {
         try {
+            if (estado === 'cancelada') {
+                await checkPagosPendientesReserva(id);
+            }
             const { error } = await supabase
                 .from('reservas')
                 .update({ estado, updated_at: new Date().toISOString() })
@@ -116,6 +130,7 @@ export function useReservas(campeonatoId?: string) {
 
     const deleteReserva = async (id: string) => {
         try {
+            await checkPagosPendientesReserva(id);
             // 1. Delete associated rooms first to avoid FK constraints
             const { error: roomsError } = await supabase
                 .from('habitaciones_reserva')
