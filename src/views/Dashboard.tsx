@@ -6,13 +6,11 @@ import {
     Hotel,
     Calendar,
     AlertCircle,
-    Clock,
     ChevronRight,
     TrendingUp,
     History,
     Info,
-    Wallet,
-    Users
+    Wallet
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { format, isAfter, isBefore, addDays, parseISO, differenceInDays } from 'date-fns';
