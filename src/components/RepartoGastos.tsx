@@ -11,9 +11,10 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 interface RepartoGastosProps {
     reservaId: string;
     precioTotal: number;
+    isReadOnly?: boolean;
 }
 
-const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal }) => {
+const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal, isReadOnly }) => {
     const { arqueros } = useArqueros();
     const { pagos, isLoading, initializePagos, marcarPagado, updateImporte, totalPendiente, totalCobrado } = usePagos(reservaId);
 
@@ -65,9 +66,11 @@ const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal })
                     ) : !hasPagos ? (
                         <div className="text-center py-4 space-y-2">
                             <p className="text-sm text-slate-500">No hay reparto creado para esta reserva.</p>
-                            <Button size="sm" variant="outline" onClick={handleInit} isLoading={isIniting} leftIcon={RefreshCw}>
-                                Crear reparto automático ({arqueros.length} arqueros — {arqueros.length > 0 ? (precioTotal / arqueros.length).toFixed(2) : '0.00'}€/pers.)
-                            </Button>
+                            {!isReadOnly && (
+                                <Button size="sm" variant="outline" onClick={handleInit} isLoading={isIniting} leftIcon={RefreshCw}>
+                                    Crear reparto automático ({arqueros.length} arqueros — {arqueros.length > 0 ? (precioTotal / arqueros.length).toFixed(2) : '0.00'}€/pers.)
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         <>
@@ -97,20 +100,26 @@ const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal })
                                                 type="number"
                                                 step="0.01"
                                                 value={pago.importe}
+                                                disabled={isReadOnly}
                                                 onChange={e => updateImporte(pago.id, parseFloat(e.target.value) || 0)}
-                                                className="w-20 text-right p-1 text-sm font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-1 focus:ring-primary outline-none"
+                                                className={cn(
+                                                    "w-20 text-right p-1 text-sm font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-1 focus:ring-primary outline-none",
+                                                    isReadOnly && "opacity-60 cursor-not-allowed"
+                                                )}
                                             />
                                             <Euro className="w-3.5 h-3.5 text-slate-400" />
                                         </div>
                                         <button
                                             onClick={() => marcarPagado(pago.id, !pago.ha_pagado)}
+                                            disabled={isReadOnly}
                                             className={cn(
                                                 "p-1.5 rounded-xl transition-all",
                                                 pago.ha_pagado
                                                     ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                                    : "bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-500"
+                                                    : "bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-500",
+                                                isReadOnly && "opacity-50 cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-500"
                                             )}
-                                            title={pago.ha_pagado ? "Marcar como pendiente" : "Marcar como pagado"}
+                                            title={isReadOnly ? "No editable" : (pago.ha_pagado ? "Marcar como pendiente" : "Marcar como pagado")}
                                         >
                                             {pago.ha_pagado ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                         </button>
@@ -127,11 +136,13 @@ const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal })
                                 </div>
                             </div>
 
-                            <div className="flex justify-end">
-                                <button onClick={handleInit} className="text-[10px] text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
-                                    <RefreshCw className="w-3 h-3" /> Reiniciar reparto
-                                </button>
-                            </div>
+                            {!isReadOnly && (
+                                <div className="flex justify-end">
+                                    <button onClick={handleInit} className="text-[10px] text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
+                                        <RefreshCw className="w-3 h-3" /> Reiniciar reparto
+                                    </button>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

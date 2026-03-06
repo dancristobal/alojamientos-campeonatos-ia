@@ -25,7 +25,8 @@ import {
     AlertCircle,
     Clock,
     Download,
-    XCircle
+    XCircle,
+    Lock
 } from 'lucide-react';
 
 import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
@@ -310,6 +311,19 @@ const CampeonatoDetalle: React.FC = () => {
                 </div>
             </div>
 
+            {/* Closed Warning Banner */}
+            {campeonato.estado === 'cerrado' && (
+                <div className="p-4 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/50 flex items-center gap-4 animate-in slide-in-from-top-2">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 shrink-0">
+                        <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <p className="font-bold text-rose-900 dark:text-rose-200">Campeonato Finalizado</p>
+                        <p className="text-sm text-rose-700/80 dark:text-rose-400/80 italic">Este campeonato está cerrado. No se pueden realizar modificaciones en alojamientos ni gastos.</p>
+                    </div>
+                </div>
+            )}
+
             {/* Stats Cards */}
             <div className="grid gap-6 md:grid-cols-3">
                 <div className="glass p-6 rounded-[2rem] flex items-center gap-5">
@@ -498,7 +512,11 @@ const CampeonatoDetalle: React.FC = () => {
                                         )}
 
                                         {r.estado === 'activa' && (
-                                            <RepartoGastos reservaId={r.id} precioTotal={Number(r.precio_total_final)} />
+                                            <RepartoGastos 
+                                                reservaId={r.id} 
+                                                precioTotal={Number(r.precio_total_final)} 
+                                                isReadOnly={campeonato.estado === 'cerrado'}
+                                            />
                                         )}
                                     </div>
 
@@ -565,6 +583,7 @@ const CampeonatoDetalle: React.FC = () => {
                             label="Nombre del Hotel / Apartamento"
                             placeholder="Ej: Hotel Hilton"
                             required
+                            disabled={campeonato.estado === 'cerrado'}
                             value={formData.alojamiento_nombre}
                             onChange={e => setFormData({ ...formData, alojamiento_nombre: e.target.value })}
                         />
@@ -573,6 +592,7 @@ const CampeonatoDetalle: React.FC = () => {
                                 label="Fecha Entrada"
                                 type="date"
                                 required
+                                disabled={campeonato.estado === 'cerrado'}
                                 value={formData.fecha_entrada}
                                 onChange={e => setFormData({ ...formData, fecha_entrada: e.target.value })}
                             />
@@ -580,6 +600,7 @@ const CampeonatoDetalle: React.FC = () => {
                                 label="Fecha Salida"
                                 type="date"
                                 required
+                                disabled={campeonato.estado === 'cerrado'}
                                 value={formData.fecha_salida}
                                 onChange={e => setFormData({ ...formData, fecha_salida: e.target.value })}
                                 error={formErrors.fecha_salida}
@@ -592,6 +613,7 @@ const CampeonatoDetalle: React.FC = () => {
                                     id="reembolsable"
                                     className="w-5 h-5 rounded-lg text-primary focus:ring-primary"
                                     checked={formData.es_reembolsable}
+                                    disabled={campeonato.estado === 'cerrado'}
                                     onChange={e => setFormData({ ...formData, es_reembolsable: e.target.checked })}
                                 />
                                 <label htmlFor="reembolsable" className="text-sm font-semibold select-none">¿Es Reembolsable?</label>
@@ -601,6 +623,7 @@ const CampeonatoDetalle: React.FC = () => {
                                     label="Límite Cancelación (Obligatoria)"
                                     type="date"
                                     required
+                                    disabled={campeonato.estado === 'cerrado'}
                                     value={formData.fecha_cancelacion}
                                     onChange={e => setFormData({ ...formData, fecha_cancelacion: e.target.value })}
                                     error={formErrors.fecha_cancelacion}
@@ -610,6 +633,7 @@ const CampeonatoDetalle: React.FC = () => {
                         <Input
                             label="Enlace a la Reserva"
                             placeholder="https://booking.com/..."
+                            disabled={campeonato.estado === 'cerrado'}
                             value={formData.enlace_web}
                             onChange={e => setFormData({ ...formData, enlace_web: e.target.value })}
                         />
@@ -619,6 +643,7 @@ const CampeonatoDetalle: React.FC = () => {
                                 className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-primary/50 transition-all min-h-[100px]"
                                 placeholder="Detalles sobre el check-in, desayuno, etc..."
                                 value={formData.observaciones}
+                                disabled={campeonato.estado === 'cerrado'}
                                 onChange={e => setFormData({ ...formData, observaciones: e.target.value })}
                             />
                         </div>
@@ -627,9 +652,11 @@ const CampeonatoDetalle: React.FC = () => {
                     <div className="space-y-4 pt-4 border-t dark:border-slate-800">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Habitaciones</h4>
-                            <Button type="button" variant="outline" size="sm" onClick={handleAddRoom} leftIcon={Plus}>
-                                Añadir Tipo
-                            </Button>
+                            {campeonato.estado === 'abierto' && (
+                                <Button type="button" variant="outline" size="sm" onClick={handleAddRoom} leftIcon={Plus}>
+                                    Añadir Tipo
+                                </Button>
+                            )}
                         </div>
 
                         {formErrors.habitaciones && (
@@ -654,6 +681,7 @@ const CampeonatoDetalle: React.FC = () => {
                                         label="Cant."
                                         type="number"
                                         min="1"
+                                        disabled={campeonato.estado === 'cerrado'}
                                         className="h-12 px-2"
                                         value={room.numero_habitaciones}
                                         onChange={e => handleUpdateRoom(idx, 'numero_habitaciones', parseInt(e.target.value) || 0)}
@@ -662,6 +690,7 @@ const CampeonatoDetalle: React.FC = () => {
                                         label="Plazas"
                                         type="number"
                                         min="1"
+                                        disabled={campeonato.estado === 'cerrado'}
                                         className="h-12 px-2"
                                         value={room.capacidad}
                                         onChange={e => handleUpdateRoom(idx, 'capacidad', parseInt(e.target.value) || 0)}
@@ -672,6 +701,7 @@ const CampeonatoDetalle: React.FC = () => {
                                             type="number"
                                             min="0"
                                             step="0.01"
+                                            disabled={campeonato.estado === 'cerrado'}
                                             className="h-12"
                                             value={room.precio_por_habitacion}
                                             onChange={e => handleUpdateRoom(idx, 'precio_por_habitacion', parseFloat(e.target.value) || 0)}
@@ -729,6 +759,7 @@ const CampeonatoDetalle: React.FC = () => {
                                 type="number"
                                 step="0.01"
                                 placeholder="Introduce el precio final si es diferente"
+                                disabled={campeonato.estado === 'cerrado'}
                                 value={formData.precio_total_manual || ''}
                                 onChange={e => setFormData({ ...formData, precio_total_manual: parseFloat(e.target.value) || undefined })}
                                 className="bg-white dark:bg-slate-900 border-primary/20"
@@ -747,11 +778,13 @@ const CampeonatoDetalle: React.FC = () => {
 
                     <div className="flex justify-end gap-3 pt-6">
                         <Button variant="ghost" type="button" onClick={handleCloseModal}>
-                            Descartar
+                            {campeonato.estado === 'cerrado' ? 'Cerrar' : 'Descartar'}
                         </Button>
-                        <Button type="submit" isLoading={isSaving} leftIcon={Hotel}>
-                            Guardar Reserva
-                        </Button>
+                        {campeonato.estado === 'abierto' && (
+                            <Button type="submit" isLoading={isSaving} leftIcon={Hotel}>
+                                Guardar Reserva
+                            </Button>
+                        )}
                     </div>
                 </form>
             </Modal>

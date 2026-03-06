@@ -24,6 +24,12 @@ import {
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 const Campeonatos: React.FC = () => {
     const navigate = useNavigate();
@@ -196,7 +202,12 @@ const Campeonatos: React.FC = () => {
                     {campeonatos.map((c) => (
                         <div
                             key={c.id}
-                            className="group glass relative overflow-hidden rounded-[2rem] p-8 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20 backdrop-blur-xl"
+                            className={cn(
+                                "group glass relative overflow-hidden rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300 border border-transparent backdrop-blur-xl",
+                                c.estado === 'cerrado' 
+                                    ? "bg-rose-50/30 dark:bg-rose-950/20 border-rose-200/50 dark:border-rose-800/50 hover:border-rose-300 dark:hover:border-rose-700" 
+                                    : "hover:shadow-primary/5 hover:border-primary/20"
+                            )}
                         >
                             {/* Animated Accent */}
                             <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/15 transition-all duration-700 group-hover:scale-110" />
@@ -210,7 +221,7 @@ const Campeonatos: React.FC = () => {
                                     <div className="flex items-center gap-4 flex-wrap">
                                         <h3 className="text-2xl font-bold tracking-tight">{c.nombre}</h3>
                                         <div className="flex gap-2">
-                                            <Badge variant={c.estado === 'abierto' ? 'success' : 'outline'} className="text-sm px-4">
+                                            <Badge variant={c.estado === 'abierto' ? 'success' : 'error'} className="text-sm px-4">
                                                 {c.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                                             </Badge>
                                             {campeonatosConAlertas[c.id] && (
@@ -261,15 +272,17 @@ const Campeonatos: React.FC = () => {
                                     >
                                         {c.estado === 'abierto' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
                                     </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        onClick={() => handleDelete(c.id)}
-                                        title="Eliminar campeonato"
-                                        className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </Button>
+                                    {c.estado === 'abierto' && (
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            onClick={() => handleDelete(c.id)}
+                                            title="Eliminar campeonato"
+                                            className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="primary"
                                         rightIcon={ChevronRight}
