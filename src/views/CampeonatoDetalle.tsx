@@ -120,6 +120,12 @@ const CampeonatoDetalle: React.FC = () => {
             }
         }
 
+        const plazasNuevaReserva = habitaciones.reduce((sum, h) => sum + (h.numero_habitaciones * h.capacidad), 0);
+
+        if (campeonato && plazasNuevaReserva > campeonato.numero_personas) {
+            errors.habitaciones = `El total de plazas reservadas en este alojamiento (${plazasNuevaReserva}) supera el número de asistentes al campeonato (${campeonato.numero_personas}).`;
+        }
+
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -412,13 +418,25 @@ const CampeonatoDetalle: React.FC = () => {
 
                                         {/* Room details */}
                                         <div className="flex flex-wrap gap-4">
-                                            {r.habitaciones?.map((h, i) => (
-                                                <div key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-medium flex items-center gap-2">
-                                                    <span className="text-primary font-bold">{h.numero_habitaciones}x</span>
-                                                    <span className="text-slate-500 font-bold">({h.capacidad} plazas)</span>
-                                                    <span className="text-slate-400">({h.precio_por_habitacion}€/n)</span>
-                                                </div>
-                                            ))}
+                                            {r.habitaciones?.map((h, i) => {
+                                                const nights = Math.max(0, differenceInDays(parseISO(r.fecha_salida), parseISO(r.fecha_entrada)));
+                                                const pppn = h.capacidad > 0 && h.precio_por_habitacion > 0 ? h.precio_por_habitacion / h.capacidad : 0;
+                                                const totalPp = pppn * nights;
+                                                return (
+                                                    <div key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-medium flex items-center gap-2">
+                                                        <span className="text-primary font-bold">{h.numero_habitaciones}x</span>
+                                                        <span className="text-slate-500 font-bold">({h.capacidad} plazas)</span>
+                                                        <span className="text-slate-400">
+                                                            ({h.precio_por_habitacion}€/n {pppn > 0 ? `- ${pppn.toFixed(2)}€ pers./n` : ''})
+                                                        </span>
+                                                        {totalPp > 0 && (
+                                                            <span className="text-primary font-bold ml-1 border-l border-slate-300 dark:border-slate-700 pl-2">
+                                                                Total: {totalPp.toFixed(2)}€/pers.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
 
                                         {/* Meta info */}
@@ -605,6 +623,13 @@ const CampeonatoDetalle: React.FC = () => {
                             </Button>
                         </div>
 
+                        {formErrors.habitaciones && (
+                            <div className="p-3 bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 text-sm font-medium rounded-xl border border-rose-200 dark:border-rose-500/20 flex items-start gap-2">
+                                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                                <div>{formErrors.habitaciones}</div>
+                            </div>
+                        )}
+
                         {habitaciones.map((room: Omit<HabitacionReserva, 'id' | 'reserva_id'>, idx: number) => (
                             <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-4 animate-in slide-in-from-top-2">
                                 <div className="flex items-center justify-between">
@@ -632,15 +657,34 @@ const CampeonatoDetalle: React.FC = () => {
                                         value={room.capacidad}
                                         onChange={e => handleUpdateRoom(idx, 'capacidad', parseInt(e.target.value) || 0)}
                                     />
-                                    <Input
-                                        label="Precio/N"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        className="h-12"
-                                        value={room.precio_por_habitacion}
-                                        onChange={e => handleUpdateRoom(idx, 'precio_por_habitacion', parseFloat(e.target.value) || 0)}
-                                    />
+                                    <div>
+                                        <Input
+                                            label="Pvp hab./N"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            className="h-12"
+                                            value={room.precio_por_habitacion}
+                                            onChange={e => handleUpdateRoom(idx, 'precio_por_habitacion', parseFloat(e.target.value) || 0)}
+                                        />
+                                        {(() => {
+                                            if (room.capacidad > 0 && room.precio_por_habitacion > 0) {
+                                                const nights = (formData.fecha_entrada && formData.fecha_salida)
+                                                    ? Math.max(0, differenceInDays(parseISO(formData.fecha_salida), parseISO(formData.fecha_entrada)))
+                                                    : 0;
+                                                const pppn = room.precio_por_habitacion / room.capacidad;
+                                                const total = pppn * nights;
+
+                                                return (
+                                                    <p className="text-[10px] text-slate-500 font-medium ml-1 mt-1 leading-tight">
+                                                        ≈ {pppn.toFixed(2)}€ pers./noche<br />
+                                                        <span className="text-primary font-bold">Total: {total.toFixed(2)}€/pers.</span>
+                                                    </p>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+                                    </div>
                                 </div>
                             </div>
                         ))}
