@@ -166,7 +166,7 @@ const Calendario: React.FC = () => {
                                         const isCritical = r.estado === 'activa' &&
                                             r.es_reembolsable &&
                                             r.fecha_cancelacion &&
-                                            differenceInDays(parseISO(r.fecha_cancelacion), new Date()) <= (window as any).__config_umbrales_critica;
+                                            differenceInDays(startOfDay(parseISO(r.fecha_cancelacion)), startOfDay(new Date())) <= (window as any).__config_umbrales_critica;
 
                                         return (
                                             <Link

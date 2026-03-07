@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useReservas } from '../hooks/useReservas';
 import { useConfig } from '../hooks/useConfig';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Badge from '../components/Badge';
 import { Input } from '../components/Input';
@@ -139,7 +139,7 @@ const Reservas: React.FC = () => {
                                     </Badge>
                                     {(() => {
                                         if (!r.fecha_cancelacion || r.estado !== 'activa' || !r.es_reembolsable) return null;
-                                        const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+                                        const daysRemaining = differenceInDays(startOfDay(parseISO(r.fecha_cancelacion)), startOfDay(new Date()));
 
                                         // Ignore if cancellation date has already passed
                                         if (daysRemaining < 0) return null;

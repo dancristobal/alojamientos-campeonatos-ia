@@ -29,7 +29,7 @@ import {
     Lock
 } from 'lucide-react';
 
-import { format, differenceInDays, parseISO, isAfter, isBefore, addDays } from 'date-fns';
+import { format, differenceInDays, parseISO, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -468,7 +468,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                         </span>
                                                     </div>
                                                     {(() => {
-                                                        const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion), new Date());
+                                                        const daysRemaining = differenceInDays(startOfDay(parseISO(r.fecha_cancelacion)), startOfDay(new Date()));
 
                                                         // Ignore if cancellation date has already passed
                                                         if (daysRemaining < 0) return null;

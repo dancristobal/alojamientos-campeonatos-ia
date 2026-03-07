@@ -13,7 +13,7 @@ import {
     Wallet
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { format, isAfter, isBefore, addDays, parseISO, differenceInDays } from 'date-fns';
+import { format, isAfter, isBefore, addDays, parseISO, differenceInDays, startOfDay } from 'date-fns';
 import { useConfig } from '../hooks/useConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -83,6 +83,7 @@ const Dashboard: React.FC = () => {
 
     const metrics = useMemo(() => {
         const now = new Date();
+        const today = startOfDay(now);
         const nowStr = now.toISOString().split('T')[0];
 
         // Filter out reservations that should be 'finalizada' based on checkout date
@@ -92,16 +93,18 @@ const Dashboard: React.FC = () => {
 
         const activeReembolsables = realActiveReservas.filter(r => r.es_reembolsable && r.fecha_cancelacion);
 
+        const proximasCancelaciones = activeReembolsables
+            .map(r => ({
+                ...r,
+                daysRemaining: differenceInDays(startOfDay(parseISO(r.fecha_cancelacion!)), today)
+            }))
+            .filter(r => r.daysRemaining >= 0 && r.daysRemaining <= config.umbrales.proxima)
+            .sort((a, b) => a.daysRemaining - b.daysRemaining);
+
         return {
             totalActivas: realActiveReservas.length,
-            proximasCancelaciones: activeReembolsables.filter(r => {
-                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
-                return daysRemaining >= 0 && daysRemaining <= config.umbrales.proxima;
-            }).sort((a, b) => parseISO(a.fecha_cancelacion!).getTime() - parseISO(b.fecha_cancelacion!).getTime()),
-            criticas: activeReembolsables.filter(r => {
-                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), now);
-                return daysRemaining >= 0 && daysRemaining <= config.umbrales.critica;
-            }),
+            proximasCancelaciones,
+            criticas: proximasCancelaciones.filter(r => r.daysRemaining <= config.umbrales.critica),
             proximasEntradas: realActiveReservas.filter(r =>
                 isAfter(parseISO(r.fecha_entrada), now) &&
                 isBefore(parseISO(r.fecha_entrada), addDays(now, 7))
@@ -179,7 +182,7 @@ const Dashboard: React.FC = () => {
                             </div>
                         ) : (
                             metrics.proximasCancelaciones.map(r => {
-                                const daysRemaining = differenceInDays(parseISO(r.fecha_cancelacion!), new Date());
+                                const daysRemaining = r.daysRemaining;
                                 const isCritical = daysRemaining <= config.umbrales.critica;
 
                                 return (
@@ -212,7 +215,7 @@ const Dashboard: React.FC = () => {
                                                 "text-[10px] sm:text-xs font-black uppercase",
                                                 isCritical ? "text-rose-600" : "text-amber-600"
                                             )}>
-                                                {daysRemaining <= 0 ? "¡HOY!" : <>{daysRemaining}<span className="hidden sm:inline"> días</span><span className="inline sm:hidden"> d</span></>}
+                                                {daysRemaining <= 0 ? "¡HOY!" : daysRemaining === 1 ? "Mañana" : <>{daysRemaining}<span className="hidden sm:inline"> días</span><span className="inline sm:hidden"> d</span></>}
                                             </p>
                                             <p className="text-sm font-bold">{format(parseISO(r.fecha_cancelacion!), "d MMM")}</p>
                                         </div>
