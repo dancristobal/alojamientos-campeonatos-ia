@@ -528,6 +528,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                 variant="ghost"
                                                 size="icon"
                                                 title="Exportar a Calendario"
+                                                disabled={campeonato.estado === 'cerrado'}
                                                 onClick={() => handleExportToCalendar(r)}
                                             >
                                                 <Download className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
