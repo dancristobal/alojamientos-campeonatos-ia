@@ -127,7 +127,7 @@ SELECT cron.schedule(
   SELECT
     net.http_post(
       url:='https://qjorborwblqpdtdfpmpm.supabase.co/functions/v1/check-cancellations',
-      headers:='{"Content-Type": "application/json", "Authorization": "Bearer sb_publishable_RcuYcQq-vTjci2snonLUaw_4N1xbLHM"}'::jsonb,
+      headers:='{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqb3Jib3J3YmxxcGR0ZGZwbXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjM2MzksImV4cCI6MjA4ODAzOTYzOX0.A1d3dlOVssXYk3_UIS8DMSN2wu0Ut9I5QmbFeI7lcOs"}'::jsonb,
       body:='{}'::jsonb
     ) as request_id;
   $$
