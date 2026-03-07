@@ -50,6 +50,7 @@ export interface Reserva {
     updated_at: string;
     // Habitaciones related info if flattened or joined
     habitaciones?: HabitacionReserva[];
+    pagos?: PagoReserva[];
 }
 
 export interface HabitacionReserva {

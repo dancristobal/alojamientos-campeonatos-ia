@@ -18,7 +18,8 @@ export function useReservas(campeonatoId?: string) {
                 .select(`
                   *,
                   habitaciones:habitaciones_reserva(*),
-                  campeonatos (nombre, estado)
+                  campeonatos (nombre, estado),
+                  pagos:pagos_reserva(*)
                 `)
                 .order('fecha_entrada', { ascending: true });
 

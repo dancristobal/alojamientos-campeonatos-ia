@@ -14,7 +14,9 @@ import {
     MapPin,
     AlertCircle,
     Loader2,
-    Clock
+    Clock,
+    CheckCircle2,
+    Wallet
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -184,12 +186,45 @@ const Reservas: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6 justify-between md:justify-end border-t md:border-t-0 md:border-l dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
-                                <div className="text-right">
-                                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-1">Total</p>
-                                    <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                            <div className="flex items-center gap-6 justify-between md:justify-end border-t md:border-t-0 md:border-l dark:border-slate-800 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
+                                <div className="text-right space-y-1">
+                                    <div className="flex items-center justify-end gap-2 text-sm font-semibold text-slate-500 uppercase tracking-widest">
+                                        {(() => {
+                                            const totalPagado = r.pagos?.filter(p => p.ha_pagado).reduce((sum, p) => sum + Number(p.importe), 0) || 0;
+                                            const totalFinal = Number(r.precio_total_final);
+                                            const isFullyPaid = totalPagado >= totalFinal && totalFinal > 0;
+                                            const isPartiallyPaid = totalPagado > 0 && !isFullyPaid;
+
+                                            if (isFullyPaid) return <Badge variant="success" className="text-[10px] py-0 px-1.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Pagado</Badge>;
+                                            if (isPartiallyPaid) return <Badge variant="warning" className="text-[10px] py-0 px-1.5 flex items-center gap-1"><Wallet className="w-3 h-3" /> Parcial</Badge>;
+                                            return <Badge variant="default" className="text-[10px] py-0 px-1.5 flex items-center gap-1">Pendiente</Badge>;
+                                        })()}
+                                        <span>Total</span>
+                                    </div>
+                                    <p className={cn(
+                                        "text-2xl font-black transition-colors",
+                                        (() => {
+                                            const totalPagado = r.pagos?.filter(p => p.ha_pagado).reduce((sum, p) => sum + Number(p.importe), 0) || 0;
+                                            const totalFinal = Number(r.precio_total_final);
+                                            if (totalPagado >= totalFinal && totalFinal > 0) return "text-emerald-600";
+                                            if (totalPagado > 0) return "text-blue-600";
+                                            return "text-slate-800 dark:text-slate-100";
+                                        })()
+                                    )}>
                                         {Number(r.precio_total_final).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                     </p>
+                                    {(() => {
+                                        const totalPagado = r.pagos?.filter(p => p.ha_pagado).reduce((sum, p) => sum + Number(p.importe), 0) || 0;
+                                        const totalFinal = Number(r.precio_total_final);
+                                        if (totalPagado > 0 && totalPagado < totalFinal) {
+                                            return (
+                                                <p className="text-[10px] font-bold text-slate-400">
+                                                    PAGADO: {totalPagado.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                </p>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
 
                                 <Link
