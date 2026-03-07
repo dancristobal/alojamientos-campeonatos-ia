@@ -118,7 +118,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- Schedule the check-cancellations function to run every day at 08:00 AM
 -- Note: Replace 'YOUR_PROJECT_REF' with your actual Supabase project reference
 -- and 'YOUR_SERVICE_ROLE_KEY' with your service role key in the Supabase Dashboard.
-
+-- Para que se ejecute a las 08:00 AM local, debes ponerlo a las 07:00 UTC: '0 7 * * *'.
 
 SELECT cron.schedule(
   'check-daily-cancellations',
