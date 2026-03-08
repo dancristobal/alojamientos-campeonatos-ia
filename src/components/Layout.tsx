@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu, Bell } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from '../hooks/useTheme';
 
 const Layout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    useTheme();
 
     return (
         <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex transition-colors duration-300">
@@ -26,7 +29,8 @@ const Layout: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all group">
+                        <ThemeToggle />
+                        <button className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all group border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                             <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:rotate-12 transition-transform" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-white dark:border-slate-900" />
                         </button>

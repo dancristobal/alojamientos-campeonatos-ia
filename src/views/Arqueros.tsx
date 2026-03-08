@@ -8,9 +8,12 @@ import {
     Trash2,
     Edit3,
     Mail,
-    Loader2,
-    AlertCircle
+    Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
+import ConfirmDialog from '../components/ConfirmDialog';
+import EmptyState from '../components/EmptyState';
+import ErrorState from '../components/ErrorState';
 
 const Arqueros: React.FC = () => {
     const { arqueros, isLoading, error, createArquero, updateArquero, deleteArquero } = useArqueros();
@@ -19,7 +22,10 @@ const Arqueros: React.FC = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({ nombre: '', email: '', numero_licencia: '' });
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingSuccess, setIsSavingSuccess] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string, nombre: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleOpenCreate = () => {
         setEditingId(null);
@@ -41,22 +47,46 @@ const Arqueros: React.FC = () => {
         try {
             setIsSaving(true);
             setFormError(null);
+            
+            const userData = { 
+                nombre: formData.nombre, 
+                email: formData.email || undefined, 
+                numero_licencia: formData.numero_licencia || undefined 
+            };
+
             if (editingId) {
-                await updateArquero(editingId, { nombre: formData.nombre, email: formData.email || undefined, numero_licencia: formData.numero_licencia || undefined });
+                await updateArquero(editingId, userData);
             } else {
-                await createArquero({ nombre: formData.nombre, email: formData.email || undefined, numero_licencia: formData.numero_licencia || undefined });
+                await createArquero(userData);
             }
-            setShowForm(false);
-        } catch (err: any) {
-            setFormError(err.message);
+
+            setIsSavingSuccess(true);
+            setTimeout(() => {
+                setIsSavingSuccess(false);
+                setShowForm(false);
+            }, 1200);
+
+            toast.success(editingId ? 'Perfil de arquero actualizado' : 'Arquero añadido correctamente');
+        } catch (err) {
+            setFormError((err as Error).message);
+            toast.error('Error al guardar el arquero');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDelete = async (id: string, nombre: string) => {
-        if (!window.confirm(`¿Eliminar a ${nombre}? Se eliminarán también sus registros de pago asociados.`)) return;
-        await deleteArquero(id);
+    const handleDelete = async () => {
+        if (!confirmDelete) return;
+        try {
+            setIsDeleting(true);
+            await deleteArquero(confirmDelete.id);
+            toast.success('Arquero eliminado del grupo');
+            setConfirmDelete(null);
+        } catch (err) {
+            toast.error('No se pudo eliminar al arquero');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     if (isLoading) return (
@@ -66,10 +96,11 @@ const Arqueros: React.FC = () => {
     );
 
     if (error) return (
-        <div className="p-8 glass bg-rose-50/50 border-rose-200 text-rose-800 rounded-3xl flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 shrink-0 mt-1" />
-            <div><p className="font-bold">Error al cargar los arqueros</p><p className="text-sm opacity-80">{error}</p></div>
-        </div>
+        <ErrorState 
+            title="Error al cargar los arqueros"
+            message={error}
+            onRetry={() => window.location.reload()}
+        />
     );
 
     return (
@@ -117,18 +148,26 @@ const Arqueros: React.FC = () => {
                     </div>
                     <div className="flex gap-3 justify-end">
                         <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
-                        <Button type="submit" isLoading={isSaving}>{editingId ? 'Guardar cambios' : 'Añadir'}</Button>
+                        <Button 
+                            type="submit" 
+                            isLoading={isSaving} 
+                            isSuccess={isSavingSuccess}
+                        >
+                            {editingId ? 'Guardar cambios' : 'Añadir'}
+                        </Button>
                     </div>
                 </form>
             )}
 
             {/* List */}
-            {arqueros.length === 0 ? (
-                <div className="text-center p-16 glass rounded-3xl space-y-4">
-                    <Users className="w-12 h-12 text-slate-300 mx-auto" />
-                    <p className="text-slate-500 font-medium">No hay arqueros en el grupo todavía.</p>
-                    <Button onClick={handleOpenCreate} leftIcon={Plus} variant="outline">Añadir el primero</Button>
-                </div>
+             {arqueros.length === 0 ? (
+                <EmptyState 
+                    icon={Users} 
+                    title="No hay arqueros" 
+                    description="Tu grupo de arqueros está vacío. Añade a los arqueros del club para poder gestionar sus pagos de alojamiento."
+                    actionLabel="Añadir primer arquero"
+                    onAction={handleOpenCreate}
+                />
             ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {arqueros.map(a => (
@@ -158,7 +197,7 @@ const Arqueros: React.FC = () => {
                                     <Edit3 className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(a.id, a.nombre)}
+                                    onClick={() => setConfirmDelete({ id: a.id, nombre: a.nombre })}
                                     className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -168,6 +207,15 @@ const Arqueros: React.FC = () => {
                     ))}
                 </div>
             )}
+            <ConfirmDialog
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={handleDelete}
+                title="Eliminar Arquero"
+                description={`¿Estás seguro de que deseas eliminar a ${confirmDelete?.nombre}? Esta acción borrará también sus registros de pago y no se puede deshacer.`}
+                confirmText="Eliminar permanentemente"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

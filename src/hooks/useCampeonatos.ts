@@ -17,8 +17,8 @@ export function useCampeonatos() {
 
             if (error) throw error;
             setCampeonatos(data || []);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
         } finally {
             setIsLoading(false);
         }
@@ -35,8 +35,8 @@ export function useCampeonatos() {
             if (error) throw error;
             setCampeonatos(prev => [data, ...prev]);
             return data;
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };
@@ -50,8 +50,8 @@ export function useCampeonatos() {
 
             if (error) throw error;
             setCampeonatos(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };
@@ -83,8 +83,8 @@ export function useCampeonatos() {
 
             if (error) throw error;
             setCampeonatos(prev => prev.map(c => c.id === id ? { ...c, estado } : c));
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };
@@ -121,8 +121,8 @@ export function useCampeonatos() {
 
             if (error) throw error;
             setCampeonatos(prev => prev.filter(c => c.id !== id));
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };

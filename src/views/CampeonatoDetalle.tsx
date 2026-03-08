@@ -33,7 +33,11 @@ import { format, differenceInDays, parseISO, isAfter, isBefore, addDays, startOf
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { HabitacionReserva, EstadoReserva } from '../types';
+import type { Reserva, HabitacionReserva, EstadoReserva } from '../types';
+import { toast } from 'sonner';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { ReservationSkeleton, DashboardCardSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -49,7 +53,10 @@ const CampeonatoDetalle: React.FC = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingSuccess, setIsSavingSuccess] = useState(false);
     const [editingReservaId, setEditingReservaId] = useState<string | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string, nombre: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const campeonato = campeonatos.find(c => c.id === id);
     // Form State for Reserva
@@ -96,9 +103,9 @@ const CampeonatoDetalle: React.FC = () => {
         setHabitaciones(habitaciones.filter((_, i: number) => i !== index));
     };
 
-    const handleUpdateRoom = (index: number, field: keyof HabitacionReserva, value: any) => {
+    const handleUpdateRoom = (index: number, field: keyof Omit<HabitacionReserva, 'id' | 'reserva_id'>, value: number) => {
         const next = [...habitaciones];
-        (next[index] as any)[field] = value;
+        (next[index] as { [key: string]: number })[field] = value;
         setHabitaciones(next);
     };
 
@@ -155,29 +162,39 @@ const CampeonatoDetalle: React.FC = () => {
                 numero_habitaciones,
                 precio_por_habitacion,
                 capacidad
-            }))
-            );
-            handleCloseModal();
+            })));
+
+            setIsSavingSuccess(true);
+            setTimeout(() => {
+                setIsSavingSuccess(false);
+                handleCloseModal();
+            }, 1200);
+
+            toast.success('Reserva guardada con éxito');
         } catch (err) {
+            toast.error((err as Error).message || 'Error al guardar la reserva');
             console.error(err);
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDeleteReserva = async (id: string) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar esta reserva por completo? Esta acción no se puede deshacer.')) {
-            return;
-        }
+    const handleDeleteReserva = async () => {
+        if (!confirmDelete) return;
 
         try {
-            await deleteReserva(id);
+            setIsDeleting(true);
+            await deleteReserva(confirmDelete.id);
+            toast.success('Reserva eliminada con éxito');
+            setConfirmDelete(null);
         } catch (err) {
-            alert('Error al eliminar la reserva');
+            toast.error((err as Error).message || 'Error al eliminar la reserva');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
-    const handleExportToCalendar = (reserva: any) => {
+    const handleExportToCalendar = (reserva: Reserva) => {
         const startRaw = new Date(reserva.fecha_entrada);
         const endRaw = new Date(reserva.fecha_salida);
 
@@ -195,20 +212,23 @@ const CampeonatoDetalle: React.FC = () => {
         ics.createEvent(event, (error, value) => {
             if (error) {
                 console.error(error);
+                toast.error('Error al generar el archivo de calendario.');
                 return;
             }
             const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `reserva_${reserva.alojamiento_nombre.replace(/\s+/g, '_').toLowerCase()}.ics`);
+            link.setAttribute('download', `reserva_${(reserva.alojamiento_nombre || 'hotel').replace(/\s+/g, '_').toLowerCase()}.ics`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success('Calendario exportado correctamente.');
         });
     };
 
-    const handleEditReserva = (reserva: any) => {
+    const handleEditReserva = (reserva: Reserva) => {
         setEditingReservaId(reserva.id);
         setFormData({
             alojamiento_nombre: reserva.alojamiento_nombre || '',
@@ -274,10 +294,30 @@ const CampeonatoDetalle: React.FC = () => {
                 handleEditReserva(reservaToEdit);
             }
         }
-    }, [location.search, reservas.length]);
+    }, [location.search, reservas]);
 
     if (loadingCam || !campeonato) {
-        return (loadingCam ? <div className="p-20 text-center">Cargando detalles...</div> : <div>Cargando...</div>);
+        return (
+            <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                    <div className="space-y-2">
+                        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+                        <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+                    </div>
+                </div>
+                <div className="grid gap-6 md:grid-cols-3">
+                    <DashboardCardSkeleton />
+                    <DashboardCardSkeleton />
+                    <DashboardCardSkeleton />
+                </div>
+                <div className="space-y-6">
+                    <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+                    <ReservationSkeleton />
+                    <ReservationSkeleton />
+                </div>
+            </div>
+        );
     }
 
     const isPeopleWarning = totalPlazas < campeonato.numero_personas;
@@ -382,11 +422,18 @@ const CampeonatoDetalle: React.FC = () => {
                 </div>
 
                 {loadingRes ? (
-                    <div className="p-10 text-center">Cargando reservas...</div>
-                ) : reservas.length === 0 ? (
-                    <div className="glass p-12 text-center rounded-[2.5rem]">
-                        <p className="text-muted-foreground text-lg italic">Todavía no has registrado ningún hotel para este campeonato.</p>
+                    <div className="grid gap-6">
+                        <ReservationSkeleton />
+                        <ReservationSkeleton />
                     </div>
+                ) : reservas.length === 0 ? (
+                    <EmptyState 
+                        icon={Hotel} 
+                        title="Sin alojamientos" 
+                        description="Todavía no has registrado ningún hotel para este campeonato. Añade uno para empezar a organizar la logística."
+                        actionLabel="Añadir primera reserva"
+                        onAction={() => setIsModalOpen(true)}
+                    />
                 ) : (
                     <div className="grid gap-6">
                         {reservas.map(r => (
@@ -559,7 +606,7 @@ const CampeonatoDetalle: React.FC = () => {
                                                 size="icon"
                                                 title="Eliminar Permanente"
                                                 disabled={campeonato.estado === 'cerrado'}
-                                                onClick={() => handleDeleteReserva(r.id)}
+                                                onClick={() => setConfirmDelete({ id: r.id, nombre: r.alojamiento_nombre || 'sin nombre' })}
                                             >
                                                 <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
                                             </Button>
@@ -751,7 +798,7 @@ const CampeonatoDetalle: React.FC = () => {
                                     ? "text-lg text-slate-400 line-through decoration-slate-300"
                                     : "text-2xl text-primary"
                             )}>
-                                {calculatePrice(formData as any, habitaciones).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                {calculatePrice(formData as Partial<Reserva>, habitaciones).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                             </span>
                         </div>
 
@@ -783,13 +830,28 @@ const CampeonatoDetalle: React.FC = () => {
                             {campeonato.estado === 'cerrado' ? 'Cerrar' : 'Descartar'}
                         </Button>
                         {campeonato.estado === 'abierto' && (
-                            <Button type="submit" isLoading={isSaving} leftIcon={Hotel}>
+                            <Button 
+                                type="submit" 
+                                isLoading={isSaving} 
+                                isSuccess={isSavingSuccess}
+                                leftIcon={Hotel}
+                            >
                                 Guardar Reserva
                             </Button>
                         )}
                     </div>
                 </form>
             </Modal>
+
+            <ConfirmDialog
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={handleDeleteReserva}
+                title="Eliminar Reserva"
+                description={`¿Estás seguro de que deseas eliminar la reserva en "${confirmDelete?.nombre}" por completo? Esta acción liberará las plazas y borrará los históricos de pago.`}
+                confirmText="Eliminar permanentemente"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

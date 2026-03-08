@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfig } from '../hooks/useConfig';
 import { useCampeonatos } from '../hooks/useCampeonatos';
-import type { EstadoCampeonato } from '../types';
+import type { Campeonato, EstadoCampeonato, Reserva } from '../types';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import { Input } from '../components/Input';
@@ -15,7 +15,6 @@ import {
     Users,
     ChevronRight,
     Plus,
-    Loader2,
     Lock,
     Unlock,
     AlertCircle,
@@ -28,6 +27,11 @@ import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { toast } from 'sonner';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { ChampionshipSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
+import ErrorState from '../components/ErrorState';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -37,13 +41,16 @@ const Campeonatos: React.FC = () => {
     const navigate = useNavigate();
     const { config, isLoading: loadingCfg } = useConfig();
     const { campeonatos, isLoading, error, updateCampeonatoStatus, createCampeonato, updateCampeonato, deleteCampeonato } = useCampeonatos();
-    const [reservas, setReservas] = useState<any[]>([]);
+    const [reservas, setReservas] = useState<Reserva[]>([]);
     const [loadingRes, setLoadingRes] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [isSavingSuccess, setIsSavingSuccess] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<'todos' | 'abierto' | 'cerrado'>('todos');
     const [searchTerm, setSearchTerm] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string, nombre: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const fetchReservas = async () => {
@@ -53,7 +60,7 @@ const Campeonatos: React.FC = () => {
                     .from('reservas')
                     .select('id, campeonato_id, fecha_cancelacion, es_reembolsable, estado')
                     .eq('estado', 'activa');
-                setReservas(data || []);
+                setReservas((data || []) as Reserva[]);
             } catch (err) {
                 console.error('Error fetching reservations:', err);
             } finally {
@@ -126,15 +133,22 @@ const Campeonatos: React.FC = () => {
             } else {
                 await createCampeonato({ ...dataToSave, estado: 'abierto' as EstadoCampeonato });
             }
-            handleCloseModal();
+            setIsSavingSuccess(true);
+            setTimeout(() => {
+                setIsSavingSuccess(false);
+                handleCloseModal();
+            }, 1200);
+            
+            toast.success(editingId ? 'Campeonato actualizado' : 'Campeonato creado con éxito');
         } catch (err) {
             console.error(err);
+            toast.error('Error al guardar el campeonato');
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleEdit = (campeonato: any) => {
+    const handleEdit = (campeonato: Campeonato) => {
         setEditingId(campeonato.id);
         setFormData({
             nombre: campeonato.nombre,
@@ -152,30 +166,28 @@ const Campeonatos: React.FC = () => {
         setFormData({ nombre: '', fecha: '', fecha_fin: '', localidad: '', numero_personas: 1 });
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar este campeonato y todas sus reservas por completo? Esta acción no se puede deshacer.')) {
-            return;
-        }
+    const handleDelete = async () => {
+        if (!confirmDelete) return;
 
         try {
-            await deleteCampeonato(id);
-        } catch (err: any) {
-            alert(err.message || 'Error al tratar de eliminar el campeonato');
+            setIsDeleting(true);
+            await deleteCampeonato(confirmDelete.id);
+            toast.success('Campeonato eliminado correctamente');
+            setConfirmDelete(null);
+        } catch (err) {
+            toast.error((err as Error).message || 'Error al tratar de eliminar el campeonato');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
     if (error) {
         return (
-            <div className="p-8 glass bg-rose-50/50 border-rose-200 text-rose-800 rounded-3xl flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 shrink-0 mt-1" />
-                <div>
-                    <p className="font-bold">Error al sincronizar datos</p>
-                    <p className="text-sm opacity-80">{error}</p>
-                    <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
-                        Reintentar
-                    </Button>
-                </div>
-            </div>
+            <ErrorState 
+                title="Error al sincronizar datos"
+                message={error}
+                onRetry={() => window.location.reload()}
+            />
         );
     }
 
@@ -216,7 +228,7 @@ const Campeonatos: React.FC = () => {
                     <select
                         className="w-full md:w-48 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 font-medium outline-none transition-all focus:ring-2 focus:ring-primary/20"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        onChange={(e) => setStatusFilter(e.target.value as 'todos' | 'abierto' | 'cerrado')}
                     >
                         <option value="todos">Todos los estados</option>
                         <option value="abierto">Abiertos</option>
@@ -227,31 +239,28 @@ const Campeonatos: React.FC = () => {
 
             {/* Content */}
             {(isLoading || loadingRes || loadingCfg) ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4 glass rounded-[2.5rem]">
-                    <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground font-semibold animate-pulse">Cargando campeonatos y alertas...</p>
+                <div className="grid gap-6">
+                    <ChampionshipSkeleton />
+                    <ChampionshipSkeleton />
+                    <ChampionshipSkeleton />
                 </div>
             ) : filteredCampeonatos.length === 0 ? (
-                <div className="glass p-16 text-center rounded-[2.5rem] border-dashed border-2 flex flex-col items-center">
-                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
-                        <Trophy className="w-10 h-10 text-slate-300" />
-                    </div>
-                    <h3 className="text-2xl font-bold">Sin resultados</h3>
-                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto text-lg leading-relaxed">
-                        {statusFilter === 'todos' && !searchTerm
-                            ? "Es el momento de añadir tu primer campeonato para empezar a organizar las reservas de hotel."
-                            : "No hay campeonatos que coincidan con los criterios de búsqueda o filtrado."}
-                    </p>
-                    {statusFilter === 'todos' && !searchTerm ? (
-                        <Button variant="outline" onClick={() => setIsModalOpen(true)} className="mt-8">
-                            Crear ahora
-                        </Button>
-                    ) : (
-                        <Button variant="ghost" onClick={() => { setStatusFilter('todos'); setSearchTerm(''); }} className="mt-8 text-primary">
-                            Limpiar búsqueda y filtros
-                        </Button>
-                    )}
-                </div>
+                <EmptyState
+                    icon={Trophy}
+                    title={statusFilter === 'todos' && !searchTerm ? "Sin campeonatos" : "Sin resultados"}
+                    description={statusFilter === 'todos' && !searchTerm
+                        ? "Es el momento de añadir tu primer campeonato para empezar a organizar las reservas de hotel."
+                        : "No hay campeonatos que coincidan con los criterios de búsqueda o filtrado."}
+                    actionLabel={statusFilter === 'todos' && !searchTerm ? "Crear primer campeonato" : "Limpiar filtros"}
+                    onAction={() => {
+                        if (statusFilter === 'todos' && !searchTerm) {
+                            setIsModalOpen(true);
+                        } else {
+                            setStatusFilter('todos');
+                            setSearchTerm('');
+                        }
+                    }}
+                />
             ) : (
                 <div className="grid gap-6">
                     {filteredCampeonatos.map((c) => (
@@ -327,7 +336,7 @@ const Campeonatos: React.FC = () => {
                                     <Button
                                         variant="secondary"
                                         size="icon"
-                                        onClick={async () => { try { await updateCampeonatoStatus(c.id, c.estado === 'abierto' ? 'cerrado' : 'abierto'); } catch (err: any) { alert(err.message); } }}
+                                        onClick={async () => { try { await updateCampeonatoStatus(c.id, c.estado === 'abierto' ? 'cerrado' : 'abierto'); toast.success(`Estado cambiado a ${c.estado === 'abierto' ? 'Cerrado' : 'Abierto'}`); } catch (err) { toast.error((err as Error).message); } }}
                                         title={c.estado === 'abierto' ? 'Cerrar campeonato' : 'Abrir campeonato'}
                                     >
                                         {c.estado === 'abierto' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
@@ -335,7 +344,7 @@ const Campeonatos: React.FC = () => {
                                     <Button
                                         variant="secondary"
                                         size="icon"
-                                        onClick={() => handleDelete(c.id)}
+                                        onClick={() => setConfirmDelete({ id: c.id, nombre: c.nombre })}
                                         title="Eliminar campeonato"
                                         className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                                     >
@@ -406,12 +415,26 @@ const Campeonatos: React.FC = () => {
                         <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
                             Cancelar
                         </Button>
-                        <Button type="submit" isLoading={isCreating}>
-                            Crear Campeonato
+                        <Button 
+                            type="submit" 
+                            isLoading={isCreating} 
+                            isSuccess={isSavingSuccess}
+                        >
+                            {editingId ? 'Actualizar' : 'Lanzar'} Campeonato
                         </Button>
                     </div>
                 </form>
             </Modal>
+
+            <ConfirmDialog
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={handleDelete}
+                title="Eliminar Campeonato"
+                description={`¿Estás seguro de que deseas eliminar el campeonato "${confirmDelete?.nombre}" y TODAS sus reservas asociadas? Esta acción es irreversible.`}
+                confirmText="Eliminar permanentemente"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

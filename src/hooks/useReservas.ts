@@ -59,8 +59,8 @@ export function useReservas(campeonatoId?: string) {
             }
 
             setReservas(reservations || []);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
         } finally {
             setIsLoading(false);
         }
@@ -121,9 +121,9 @@ export function useReservas(campeonatoId?: string) {
 
             await fetchReservas();
             return resData;
-        } catch (err: any) {
+        } catch (err) {
             console.error('Error in saveReserva:', err);
-            setError(err.message);
+            setError((err as Error).message);
             throw err;
         }
     };
@@ -151,8 +151,8 @@ export function useReservas(campeonatoId?: string) {
 
             if (error) throw error;
             setReservas(prev => prev.map(r => r.id === id ? { ...r, estado } : r));
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };
@@ -176,8 +176,8 @@ export function useReservas(campeonatoId?: string) {
 
             if (resError) throw resError;
             setReservas(prev => prev.filter(r => r.id !== id));
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError((err as Error).message);
             throw err;
         }
     };

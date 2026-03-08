@@ -16,8 +16,9 @@ export function useArqueros() {
                 .order('nombre', { ascending: true });
             if (error) throw error;
             setArqueros(data || []);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const error = err as Error;
+            setError(error.message);
         } finally {
             setIsLoading(false);
         }

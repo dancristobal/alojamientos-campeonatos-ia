@@ -51,6 +51,11 @@ export interface Reserva {
     // Habitaciones related info if flattened or joined
     habitaciones?: HabitacionReserva[];
     pagos?: PagoReserva[];
+    campeonato?: Campeonato;
+}
+
+export interface ReservaConMetricas extends Reserva {
+    daysRemaining: number;
 }
 
 export interface HabitacionReserva {

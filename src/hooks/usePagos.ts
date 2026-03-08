@@ -17,8 +17,8 @@ export function usePagos(reservaId?: string) {
                 .order('arquero(nombre)', { ascending: true });
             if (error) throw error;
             setPagos(data || []);
-        } catch (err: any) {
-            console.error(err);
+        } catch (err) {
+            console.error(err as Error);
         } finally {
             setIsLoading(false);
         }

@@ -1,42 +1,56 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useConfig, type AppConfig } from '../hooks/useConfig';
 import { Settings, User, Bell, Save, RefreshCw } from 'lucide-react';
 import { Input } from '../components/Input';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { toast } from 'sonner';
+import { Skeleton } from '../components/Skeleton';
 
 const SettingsView: React.FC = () => {
     const { config, updateConfig, isLoading } = useConfig();
     const [localConfig, setLocalConfig] = useState<AppConfig | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    useEffect(() => {
-        if (config) {
-            setLocalConfig(config);
-        }
-    }, [config]);
+    // We localy manage the config for editing. 
+    // If not yet modified, we show the global config.
+    const currentConfig = localConfig || config;
+
+    const handleUpdate = (updates: Partial<AppConfig>) => {
+        if (!currentConfig) return;
+        setLocalConfig({ ...currentConfig, ...updates });
+    };
 
     const handleSave = async () => {
-        if (!localConfig) return;
+        if (!currentConfig) return;
         setIsSaving(true);
-        setMessage(null);
-        const success = await updateConfig(localConfig);
+        const success = await updateConfig(currentConfig);
         setIsSaving(false);
         if (success) {
-            setMessage({ type: 'success', text: 'Configuración guardada correctamente. Refresca para ver los cambios.' });
-            setTimeout(() => setMessage(null), 5000);
+            setIsSuccess(true);
+            setTimeout(() => setIsSuccess(false), 2000);
+            toast.success('Configuración guardada correctamente');
         } else {
-            setMessage({ type: 'error', text: 'Error al guardar la configuración.' });
+            toast.error('Error al guardar la configuración');
         }
     };
 
-    if (isLoading || !localConfig) {
+    if (isLoading || !currentConfig) {
         return (
-            <div className="flex flex-col items-center justify-center py-32 gap-4 glass rounded-3xl">
-                <RefreshCw className="w-12 h-12 text-primary animate-spin" />
-                <p className="text-muted-foreground font-bold animate-pulse uppercase tracking-widest text-xs">Cargando Configuración...</p>
+            <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500">
+                <div className="flex justify-between items-end gap-6">
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-64 rounded-xl" />
+                        <Skeleton className="h-6 w-96 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-12 w-40 rounded-xl" />
+                </div>
+                <div className="grid gap-8 md:grid-cols-2">
+                    <Skeleton className="h-[400px] w-full rounded-[2.5rem]" />
+                    <Skeleton className="h-[400px] w-full rounded-[2.5rem]" />
+                </div>
             </div>
         );
     }
@@ -55,23 +69,13 @@ const SettingsView: React.FC = () => {
                     leftIcon={Save}
                     onClick={handleSave}
                     isLoading={isSaving}
+                    isSuccess={isSuccess}
                     className="w-full sm:w-auto text-left"
                 >
                     Guardar Cambios
                 </Button>
             </div>
 
-            {message && (
-                <div className={`p-4 rounded-2xl border ${message.type === 'success'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900/30 dark:text-rose-400'
-                    }`}>
-                    <p className="font-bold flex items-center gap-2">
-                        {message.type === 'success' ? <Save className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-                        {message.text}
-                    </p>
-                </div>
-            )}
 
             <div className="grid gap-8 md:grid-cols-2">
                 {/* Usuario Section */}
@@ -86,18 +90,16 @@ const SettingsView: React.FC = () => {
                     <div className="space-y-4">
                         <Input
                             label="Nombre de Usuario"
-                            value={localConfig.usuario.nombre}
-                            onChange={(e) => setLocalConfig({
-                                ...localConfig,
-                                usuario: { ...localConfig.usuario, nombre: e.target.value }
+                            value={currentConfig.usuario.nombre}
+                            onChange={(e) => handleUpdate({
+                                usuario: { ...currentConfig.usuario, nombre: e.target.value }
                             })}
                         />
                         <Input
                             label="Rol / Cargo"
-                            value={localConfig.usuario.rol}
-                            onChange={(e) => setLocalConfig({
-                                ...localConfig,
-                                usuario: { ...localConfig.usuario, rol: e.target.value }
+                            value={currentConfig.usuario.rol}
+                            onChange={(e) => handleUpdate({
+                                usuario: { ...currentConfig.usuario, rol: e.target.value }
                             })}
                         />
                     </div>
@@ -116,17 +118,16 @@ const SettingsView: React.FC = () => {
                         <div>
                             <div className="flex justify-between mb-2">
                                 <label className="text-sm font-bold ml-1">Umbral "Próxima" (Días)</label>
-                                <Badge variant="warning">{localConfig.umbrales.proxima} d</Badge>
+                                <Badge variant="warning">{currentConfig.umbrales.proxima} d</Badge>
                             </div>
                             <input
                                 type="range"
                                 min="1"
                                 max="30"
                                 className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary"
-                                value={localConfig.umbrales.proxima}
-                                onChange={(e) => setLocalConfig({
-                                    ...localConfig,
-                                    umbrales: { ...localConfig.umbrales, proxima: parseInt(e.target.value) }
+                                value={currentConfig.umbrales.proxima}
+                                onChange={(e) => handleUpdate({
+                                    umbrales: { ...currentConfig.umbrales, proxima: parseInt(e.target.value) }
                                 })}
                             />
                             <p className="text-[10px] text-slate-500 mt-2 italic">Aparecerán en la lista de "Próximas Cancelaciones".</p>
@@ -135,17 +136,16 @@ const SettingsView: React.FC = () => {
                         <div>
                             <div className="flex justify-between mb-2">
                                 <label className="text-sm font-bold ml-1">Umbral "Crítica" (Días)</label>
-                                <Badge variant="error">{localConfig.umbrales.critica} d</Badge>
+                                <Badge variant="error">{currentConfig.umbrales.critica} d</Badge>
                             </div>
                             <input
                                 type="range"
                                 min="1"
                                 max="10"
                                 className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                                value={localConfig.umbrales.critica}
-                                onChange={(e) => setLocalConfig({
-                                    ...localConfig,
-                                    umbrales: { ...localConfig.umbrales, critica: parseInt(e.target.value) }
+                                value={currentConfig.umbrales.critica}
+                                onChange={(e) => handleUpdate({
+                                    umbrales: { ...currentConfig.umbrales, critica: parseInt(e.target.value) }
                                 })}
                             />
                             <p className="text-[10px] text-slate-500 mt-2 italic">Se marcarán con prioridad alta y color rojo.</p>
@@ -169,9 +169,8 @@ const SettingsView: React.FC = () => {
                             label="Email para Notificaciones"
                             type="email"
                             placeholder="tu@email.com"
-                            value={localConfig.email_notificaciones}
-                            onChange={(e) => setLocalConfig({
-                                ...localConfig,
+                            value={currentConfig.email_notificaciones}
+                            onChange={(e) => handleUpdate({
                                 email_notificaciones: e.target.value
                             })}
                         />

@@ -7,7 +7,6 @@ import {
     Calendar,
     AlertCircle,
     ChevronRight,
-    TrendingUp,
     History,
     Info,
     Wallet
@@ -19,7 +18,9 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-import type { Reserva } from '../types';
+import type { Reserva, ReservaConMetricas } from '../types';
+import { DashboardCardSkeleton, Skeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -34,12 +35,8 @@ const Dashboard: React.FC = () => {
     const [loadingRes, setLoadingRes] = React.useState(true);
     const [pendientePagos, setPendientePagos] = React.useState(0);
 
-    // Inject config into window for shared components if needed
-    React.useEffect(() => {
-        if (config) {
-            (window as any).__config_umbrales_critica = config.umbrales.critica;
-        }
-    }, [config]);
+    // Inject config into window for shared components if needed - DEPRECATED
+    // Now components use the useConfig hook directly for consistency
 
     React.useEffect(() => {
         const fetchAll = async () => {
@@ -93,7 +90,7 @@ const Dashboard: React.FC = () => {
 
         const activeReembolsables = realActiveReservas.filter(r => r.es_reembolsable && r.fecha_cancelacion);
 
-        const proximasCancelaciones = activeReembolsables
+        const proximasCancelaciones: ReservaConMetricas[] = activeReembolsables
             .map(r => ({
                 ...r,
                 daysRemaining: differenceInDays(startOfDay(parseISO(r.fecha_cancelacion!)), today)
@@ -114,12 +111,33 @@ const Dashboard: React.FC = () => {
 
     if (loadingCam || loadingRes || loadingCfg) {
         return (
-            <div className="flex flex-col items-center justify-center py-32 gap-6 glass rounded-[3rem]">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                    <TrendingUp className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-primary" />
+            <div className="space-y-10 animate-in fade-in duration-500">
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-64 rounded-xl" />
+                    <Skeleton className="h-6 w-96 rounded-lg" />
                 </div>
-                <p className="font-bold text-slate-400 animate-pulse tracking-widest uppercase text-xs">Calculando Métricas...</p>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <DashboardCardSkeleton />
+                    <DashboardCardSkeleton />
+                    <DashboardCardSkeleton />
+                    <DashboardCardSkeleton />
+                </div>
+                <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                        <Skeleton className="h-8 w-48 rounded-lg" />
+                        <div className="space-y-4">
+                            <Skeleton className="h-24 w-full rounded-[2rem]" />
+                            <Skeleton className="h-24 w-full rounded-[2rem]" />
+                        </div>
+                    </div>
+                    <div className="space-y-6">
+                        <Skeleton className="h-8 w-48 rounded-lg" />
+                        <div className="space-y-4">
+                            <Skeleton className="h-24 w-full rounded-[2rem]" />
+                            <Skeleton className="h-24 w-full rounded-[2rem]" />
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -177,9 +195,12 @@ const Dashboard: React.FC = () => {
 
                     <div className="space-y-4">
                         {metrics.proximasCancelaciones.length === 0 ? (
-                            <div className="glass p-12 text-center rounded-[2.5rem] border-dashed border-2">
-                                <p className="text-muted-foreground italic">No hay cancelaciones próximas.</p>
-                            </div>
+                            <EmptyState 
+                                variant="compact"
+                                icon={History} 
+                                title="Sin sustos" 
+                                description="No hay límites de cancelación próximos en los parámetros configurados."
+                            />
                         ) : (
                             metrics.proximasCancelaciones.map(r => {
                                 const daysRemaining = r.daysRemaining;
@@ -208,7 +229,7 @@ const Dashboard: React.FC = () => {
                                             )}>
                                                 {r.alojamiento_nombre}
                                             </h4>
-                                            <p className="text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                            <p className="text-sm text-slate-500 truncate">{r.campeonato?.nombre}</p>
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className={cn(
@@ -245,9 +266,14 @@ const Dashboard: React.FC = () => {
 
                     <div className="space-y-4">
                         {metrics.proximasEntradas.length === 0 ? (
-                            <div className="glass p-12 text-center rounded-[2.5rem] border-dashed border-2">
-                                <p className="text-muted-foreground italic">Tranquilidad por ahora. No hay entradas en los próximos 7 días.</p>
-                            </div>
+                            <EmptyState 
+                                variant="compact"
+                                icon={Calendar} 
+                                title="Sin viajes previstos" 
+                                description="No hay entradas en hoteles para los próximos 7 días."
+                                actionLabel="Gestionar campeonatos"
+                                onAction={() => navigate('/campeonatos')}
+                            />
                         ) : (
                             metrics.proximasEntradas.map(r => (
                                 <div key={r.id} className="glass p-4 sm:p-6 rounded-3xl flex items-center gap-3 sm:gap-6 border-l-4 border-emerald-400 group hover:bg-emerald-50/10 transition-colors">
@@ -261,7 +287,7 @@ const Dashboard: React.FC = () => {
                                         )}>
                                             {r.alojamiento_nombre}
                                         </h4>
-                                        <p className="text-xs sm:text-sm text-slate-500 truncate">{(r as any).campeonato?.nombre}</p>
+                                        <p className="text-xs sm:text-sm text-slate-500 truncate">{r.campeonato?.nombre}</p>
                                     </div>
                                     <div className="text-right shrink-0">
                                         <p className="text-[10px] sm:text-xs font-black text-emerald-600 uppercase">

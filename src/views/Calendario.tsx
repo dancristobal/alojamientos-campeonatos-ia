@@ -24,6 +24,7 @@ import {
     Hotel
 } from 'lucide-react';
 import { useCampeonatos } from '../hooks/useCampeonatos';
+import { useConfig } from '../hooks/useConfig';
 import { supabase } from '../lib/supabase';
 import Button from '../components/Button';
 import { clsx, type ClassValue } from 'clsx';
@@ -38,6 +39,7 @@ function cn(...inputs: ClassValue[]) {
 
 const Calendario: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const { config, isLoading: loadingCfg } = useConfig();
     const { campeonatos, isLoading: loadingCam } = useCampeonatos();
     const [reservas, setReservas] = useState<Reserva[]>([]);
     const [loadingRes, setLoadingRes] = useState(true);
@@ -76,7 +78,7 @@ const Calendario: React.FC = () => {
         return { dayCam, dayRes };
     };
 
-    if (loadingCam || loadingRes) {
+    if (loadingCam || loadingRes || loadingCfg) {
         return (
             <div className="flex flex-col items-center justify-center py-32 gap-4 glass rounded-3xl">
                 <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -166,7 +168,7 @@ const Calendario: React.FC = () => {
                                         const isCritical = r.estado === 'activa' &&
                                             r.es_reembolsable &&
                                             r.fecha_cancelacion &&
-                                            differenceInDays(startOfDay(parseISO(r.fecha_cancelacion)), startOfDay(new Date())) <= (window as any).__config_umbrales_critica;
+                                            differenceInDays(startOfDay(parseISO(r.fecha_cancelacion)), startOfDay(new Date())) <= config.umbrales.critica;
 
                                         return (
                                             <Link

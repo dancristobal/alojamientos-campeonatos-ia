@@ -9,9 +9,12 @@ import Arqueros from './views/Arqueros';
 import Calendario from './views/Calendario';
 import Settings from './views/Settings';
 
+import { Toaster } from 'sonner';
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <Toaster richColors position="top-right" />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />

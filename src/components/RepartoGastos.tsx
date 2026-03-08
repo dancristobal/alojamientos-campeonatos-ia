@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { usePagos } from '../hooks/usePagos';
 import { useArqueros } from '../hooks/useArqueros';
-import { CheckCircle, XCircle, Users, Euro, RefreshCw, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import Button from './Button';
+import { CheckCircle, XCircle, Users, Euro, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { toast } from 'sonner';
+import { Skeleton } from './Skeleton';
+import EmptyState from './EmptyState';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -19,18 +21,16 @@ const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal, i
     const { pagos, isLoading, initializePagos, marcarPagado, updateImporte, totalPendiente, totalCobrado } = usePagos(reservaId);
 
     const [isExpanded, setIsExpanded] = useState(false);
-    const [isIniting, setIsIniting] = useState(false);
 
     const handleInit = async () => {
-        if (arqueros.length === 0) { alert('Primero añade arqueros en la sección Arqueros.'); return; }
+        if (arqueros.length === 0) { toast.warning('Primero añade arqueros en la sección Arqueros.'); return; }
         try {
-            setIsIniting(true);
             const importePorPersona = arqueros.length > 0 ? precioTotal / arqueros.length : 0;
             await initializePagos(arqueros.map(a => a.id), parseFloat(importePorPersona.toFixed(2)));
+            toast.success('Reparto de gastos inicializado con éxito');
         } catch (err) {
+            toast.error('Error al inicializar el reparto');
             console.error(err);
-        } finally {
-            setIsIniting(false);
         }
     };
 
@@ -62,15 +62,20 @@ const RepartoGastos: React.FC<RepartoGastosProps> = ({ reservaId, precioTotal, i
             {isExpanded && (
                 <div className="px-4 pb-4 space-y-3">
                     {isLoading ? (
-                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                        <div className="py-4 space-y-3">
+                            <Skeleton className="h-10 w-full rounded-xl" />
+                            <Skeleton className="h-10 w-full rounded-xl" />
+                        </div>
                     ) : !hasPagos ? (
-                        <div className="text-center py-4 space-y-2">
-                            <p className="text-sm text-slate-500">No hay reparto creado para esta reserva.</p>
-                            {!isReadOnly && (
-                                <Button size="sm" variant="outline" onClick={handleInit} isLoading={isIniting} leftIcon={RefreshCw}>
-                                    Crear reparto automático ({arqueros.length} arqueros — {arqueros.length > 0 ? (precioTotal / arqueros.length).toFixed(2) : '0.00'}€/pers.)
-                                </Button>
-                            )}
+                        <div className="py-2">
+                            <EmptyState 
+                                variant="compact"
+                                icon={Euro}
+                                title="Sin reparto"
+                                description="Aún no has distribuido el coste entre los arqueros."
+                                actionLabel={!isReadOnly ? `Crear reparto para ${arqueros.length} arqueros` : undefined}
+                                onAction={!isReadOnly ? handleInit : undefined}
+                            />
                         </div>
                     ) : (
                         <>
