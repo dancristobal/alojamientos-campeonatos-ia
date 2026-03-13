@@ -128,22 +128,20 @@ export function useReservas(campeonatoId?: string) {
         }
     };
 
-    const checkPagosPendientesReserva = async (reservaId: string) => {
+    const checkPagosRealizadosReserva = async (reservaId: string) => {
         const { data: pagos } = await supabase
             .from('pagos_reserva')
             .select('id')
             .eq('reserva_id', reservaId)
-            .eq('ha_pagado', false);
+            .eq('ha_pagado', true);
         if (pagos && pagos.length > 0) {
-            throw new Error('No se puede realizar esta acción: hay arqueros pendientes de pago en esta reserva.');
+            throw new Error('No se puede realizar esta acción: hay arqueros que ya han pagado su parte. Debes gestionar esos pagos antes.');
         }
     };
 
     const updateReservaStatus = async (id: string, estado: EstadoReserva) => {
         try {
-            if (estado === 'cancelada') {
-                await checkPagosPendientesReserva(id);
-            }
+            // Se permite cancelar o reactivar siempre, el bloqueo es solo para borrar físicamente con pagos realizados
             const { error } = await supabase
                 .from('reservas')
                 .update({ estado, updated_at: new Date().toISOString() })
@@ -159,7 +157,7 @@ export function useReservas(campeonatoId?: string) {
 
     const deleteReserva = async (id: string) => {
         try {
-            await checkPagosPendientesReserva(id);
+            await checkPagosRealizadosReserva(id);
             // 1. Delete associated rooms first to avoid FK constraints
             const { error: roomsError } = await supabase
                 .from('habitaciones_reserva')

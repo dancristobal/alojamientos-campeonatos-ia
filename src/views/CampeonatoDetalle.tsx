@@ -79,7 +79,7 @@ const CampeonatoDetalle: React.FC = () => {
         const plazasReserva = r.habitaciones?.reduce((sum, h) => {
             return sum + (h.numero_habitaciones * (h.capacidad || 2));
         }, 0) || 0;
-        return acc + (r.estado === 'activa' ? plazasReserva : 0);
+        return acc + (r.estado !== 'cancelada' ? plazasReserva : 0);
     }, 0);
 
     const hasCriticalCancellation = React.useMemo(() => {
@@ -399,7 +399,7 @@ const CampeonatoDetalle: React.FC = () => {
                     <div>
                         <p className="text-sm font-medium text-slate-500">Presupuesto Estimado</p>
                         <p className="text-2xl font-black">
-                            {reservas.reduce((acc, r) => acc + (r.estado === 'activa' ? Number(r.precio_total_final) : 0), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                            {reservas.reduce((acc, r) => acc + (r.estado !== 'cancelada' ? Number(r.precio_total_final) : 0), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                         </p>
                     </div>
                 </div>
@@ -559,7 +559,7 @@ const CampeonatoDetalle: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {r.estado === 'activa' && (
+                                        {r.estado !== 'cancelada' && (
                                             <RepartoGastos 
                                                 reservaId={r.id} 
                                                 precioTotal={Number(r.precio_total_final)} 

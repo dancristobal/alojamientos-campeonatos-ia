@@ -62,11 +62,12 @@ const Dashboard: React.FC = () => {
 
             setAllReservas(reservations);
 
-            // Fetch pending payments
+            // Fetch pending payments only for active reservations
             const { data: pagos } = await supabase
                 .from('pagos_reserva')
-                .select('importe, ha_pagado')
-                .eq('ha_pagado', false);
+                .select('importe, ha_pagado, reserva:reservas!inner(estado)')
+                .eq('ha_pagado', false)
+                .eq('reserva.estado', 'activa');
             const total = (pagos || []).reduce((sum, p) => sum + Number(p.importe), 0);
             setPendientePagos(total);
 
